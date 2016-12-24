@@ -1,0 +1,10 @@
+*.sdf
+*.opensdf
+*.db
+*.opendb
+*.suo
+*.user
+/.vs/
+/_ReSharper.Caches/
+x64/
+Release/
