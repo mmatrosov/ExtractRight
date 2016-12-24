@@ -1,5 +1,10 @@
-#include <vector>
 #include "Common.h"
+
+#include <boost/range/algorithm.hpp>
+#include <boost/algorithm/cxx11/is_partitioned.hpp>
+#include <boost/algorithm/cxx11/find_if_not.hpp>
+
+#include <vector>
 
 std::vector<Point> segmentationNaive(const std::vector<Point>& points)
 {
@@ -66,4 +71,25 @@ std::vector<Point> segmentationNaive(const std::vector<Point>& points)
   }
 
   return result;
+}
+
+std::vector<Point> segmentation(std::vector<Point> points)
+{
+  using namespace boost::range;
+  using namespace boost::algorithm;
+
+  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+  auto middle = adjacent_find(points,
+    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+
+  if (middle != points.end())
+    rotate(points, std::next(middle));
+
+  if (!is_partitioned(points, isRight))
+    throw std::runtime_error("Unexpected order");
+
+  points.erase(find_if_not(points, isRight), points.end());
+
+  return points;
 }
