@@ -3,11 +3,13 @@
 #include <gtest/gtest.h>
 
 std::vector<Point> segmentationNaive(const std::vector<Point>& points);
+std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points);
 std::vector<Point> segmentation(std::vector<Point> points);
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
   EXPECT_TRUE(segmentationNaive(input) == answer);
+  EXPECT_TRUE(segmentationNaiveRefactored(input) == answer);
   EXPECT_TRUE(segmentation(input) == answer);
 }
 
@@ -17,6 +19,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_TRUE(answer.size() == 1);
   EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
 
+  EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
   EXPECT_THROW(segmentation(input), std::runtime_error);
 }
 

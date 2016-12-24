@@ -73,6 +73,50 @@ std::vector<Point> segmentationNaive(const std::vector<Point>& points)
   return result;
 }
 
+std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
+{
+  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+  int p = 0;
+  int q = 0;
+  for (int i = 1; i < points.size(); ++i)
+  {
+    if (!isRight(points[i - 1]) && isRight(points[i]))
+      p = i;
+    if (isRight(points[i - 1]) && !isRight(points[i]))
+      q = i;
+  }
+
+  std::vector<Point> result;
+
+  if (p == q)
+  {
+    if (!points.empty() && isRight(points[0]))
+      result = points;
+    return result;
+  }
+
+  auto iterate = [&](int from, int to, bool shouldBeRight)
+  {
+    int i = from;
+    while (i != to)
+    {
+      if (isRight(points[i]) != shouldBeRight)
+        throw std::runtime_error("Unexpected order");
+      if (shouldBeRight)
+        result.push_back(points[i]);
+      if (++i >= points.size())
+        i = 0;
+    }
+  };
+
+  iterate(p, q, true);
+  iterate(q, p, false);
+
+  return result;
+}
+
+
 std::vector<Point> segmentation(std::vector<Point> points)
 {
   using namespace boost::range;
