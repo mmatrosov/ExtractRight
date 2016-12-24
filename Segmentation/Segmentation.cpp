@@ -1,8 +1,14 @@
 #include <vector>
 #include "Common.h"
 
-std::vector<Point> segmentation(const std::vector<Point>& points)
+std::vector<Point> segmentationNaive(const std::vector<Point>& points)
 {
+  std::vector<Point> result;
+  result.clear();
+
+  if (points.size() == 0)
+    return result;
+
   int p = 0;
   for (int i = 1; i < points.size(); ++i)
     if (points[i - 1].x < 0 && points[i].x >= 0)
@@ -19,7 +25,12 @@ std::vector<Point> segmentation(const std::vector<Point>& points)
       break;
     }
 
-  std::vector<Point> result;
+  if (p == q)
+  {
+    if (points[0].x >= 0)
+      result = points;
+    return result;
+  }
 
   int i = p;
   while (i != q)
