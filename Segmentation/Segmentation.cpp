@@ -33,8 +33,9 @@ std::vector<Point> segmentationNaive(const std::vector<Point>& points)
   if (p == q)
   {
     if (points[0].x >= 0)
-      result = points;
-    return result;
+      return points;
+    else
+      return result;
   }
 
   int i = p;
@@ -70,7 +71,7 @@ std::vector<Point> segmentationNaive(const std::vector<Point>& points)
       i = 0;
   }
 
-  return result;
+  return std::move(result);
 }
 
 std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
