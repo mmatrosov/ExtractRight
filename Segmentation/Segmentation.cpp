@@ -117,6 +117,39 @@ std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
   return result;
 }
 
+std::vector<Point> segmentationMirrada(const std::vector<Point>& points)
+{
+  using PointsIterator = std::vector<Point>::const_iterator;
+
+  auto getLastNegative = [](PointsIterator i, PointsIterator end)
+  {
+    while (i != end && i->x < 0) { ++i; }
+    return i;
+  };
+
+  auto getLastPositive = [](PointsIterator i, PointsIterator end)
+  {
+    while (i != end && i->x >= 0) { ++i; }
+    return i;
+  };
+
+  std::vector<Point> segment;
+  PointsIterator secondStart = points.begin();
+  PointsIterator secondEnd = getLastPositive(secondStart, points.end());
+  PointsIterator firstStart = getLastNegative(secondEnd, points.end());
+  PointsIterator firstEnd = getLastPositive(firstStart, points.end());
+  PointsIterator lastIt = (secondStart == secondEnd) ? getLastNegative(firstEnd, points.end()) : firstEnd;
+
+  if (lastIt != points.end())
+  {
+    throw std::runtime_error("Unexpected order");
+  }
+
+  segment.insert(segment.end(), firstStart, firstEnd);
+  segment.insert(segment.end(), secondStart, secondEnd);
+
+  return segment;
+}
 
 std::vector<Point> segmentation(std::vector<Point> points)
 {
