@@ -5,12 +5,14 @@
 std::vector<Point> segmentationNaive(const std::vector<Point>& points);
 std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points);
 std::vector<Point> segmentation(std::vector<Point> points);
+std::vector<Point> segmentationIter(std::vector<Point> points);
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
   EXPECT_TRUE(segmentationNaive(input) == answer);
   EXPECT_TRUE(segmentationNaiveRefactored(input) == answer);
   EXPECT_TRUE(segmentation(input) == answer);
+  EXPECT_TRUE(segmentationIter(input) == answer);
 }
 
 void checkFailure(const std::vector<Point>& input)
@@ -21,6 +23,7 @@ void checkFailure(const std::vector<Point>& input)
 
   EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
   EXPECT_THROW(segmentation(input), std::runtime_error);
+  EXPECT_THROW(segmentationIter(input), std::runtime_error);
 }
 
 TEST(Segmentation, RightLeft)

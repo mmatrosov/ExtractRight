@@ -172,3 +172,73 @@ std::vector<Point> segmentation(std::vector<Point> points)
 
   return points;
 }
+
+template<class It>
+class WrappingIterator : public boost::iterator_facade<
+  WrappingIterator<It>, typename std::iterator_traits<It>::value_type, boost::random_access_traversal_tag>
+{
+public:
+  WrappingIterator() = default;
+  WrappingIterator(It it, It begin, It end) : m_it(it), m_begin(begin), m_end(end) {}
+
+private:
+  friend class boost::iterator_core_access;
+
+  void increment()
+  {
+    ++m_it;
+  }
+
+  bool equal(const WrappingIterator& other) const
+  {
+    return m_it == other.m_it;
+  }
+
+  typename std::iterator_traits<It>::reference dereference() const
+  {
+    return *(m_begin + (m_it - m_begin) % (m_end - m_begin));
+  }
+
+  void advance(ptrdiff_t n)
+  {
+    m_it += n;
+  }
+
+  ptrdiff_t distance_to(const WrappingIterator& other) const
+  {
+    return std::distance(m_it, other.m_it);
+  }
+
+  It m_it;
+  It m_begin;
+  It m_end;
+};
+
+template<class It>
+auto makeWrappingIterator(It it, It begin, It end)
+{
+  return WrappingIterator<It>(it, begin, end);
+}
+
+std::vector<Point> segmentationIter(std::vector<Point> points)
+{
+  using namespace boost::range;
+  using namespace boost::algorithm;
+
+  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+  auto middle = adjacent_find(points,
+    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+
+  middle = middle != points.end() ? std::next(middle) : points.begin();
+
+  auto begin = makeWrappingIterator(middle, points.begin(), points.end());
+  auto end = begin + points.size();
+
+  if (!std::is_partitioned(begin, end, isRight))
+    throw std::runtime_error("Unexpected order");
+
+  end = std::partition_point(begin, end, isRight);
+
+  return std::vector<Point>(begin, end);
+}
