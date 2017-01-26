@@ -2,7 +2,8 @@
 
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
-#include <boost/algorithm/cxx11/find_if_not.hpp>
+#include <boost/algorithm/cxx11/partition_point.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 
 #include <vector>
 
@@ -167,7 +168,7 @@ std::vector<Point> segmentation(std::vector<Point> points)
   if (!is_partitioned(points, isRight))
     throw std::runtime_error("Unexpected order");
 
-  points.erase(find_if_not(points, isRight), points.end());
+  points.erase(partition_point(points, isRight), points.end());
 
   return points;
 }
