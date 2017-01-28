@@ -353,15 +353,15 @@ void checkFailure(const std::vector<Point>& input)
 TEST(Segmentation, RightLeft)
 {
   EXPECT_NO_FATAL_FAILURE(checkAnswer(
-  { { 1, 1 }, { 1, 2 }, { -1, 1 } },
+  { { 1, 1 }, { 1, 2 }, { -1, 3 } },
   { { 1, 1 }, { 1, 2 } }));
 }
 
 TEST(Segmentation, LeftRight)
 {
   EXPECT_NO_FATAL_FAILURE(checkAnswer(
-  { { -1, 1 }, { 1, 1 }, { 1, 2 } },
-  { { 1, 1 }, { 1, 2 } }));
+  { { -1, 1 }, { 1, 2 }, { 1, 3 } },
+  { { 1, 2 }, { 1, 3 } }));
 }
 
 TEST(Segmentation, LeftRightLeft)
@@ -402,13 +402,13 @@ TEST(Segmentation, Empty)
 TEST(Segmentation, Incorrect1)
 {
   EXPECT_NO_FATAL_FAILURE(checkFailure(
-  { { -1, 1 }, { 1, 1 }, { -1, 1 }, { 1, 2 } }));
+  { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } }));
 }
 
 TEST(Segmentation, Incorrect2)
 {
   EXPECT_NO_FATAL_FAILURE(checkFailure(
-  { { 1, 2 }, { -1, 1 }, { 1, 1 }, { -1, 1 } }));
+  { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } }));
 }
 
 int main(int argc, char* argv[])
