@@ -189,18 +189,18 @@ class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It
 {
 public:
   WrappingIterator() = default;
-  WrappingIterator(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_end(end) {}
+  WrappingIterator(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_size(end - begin) {}
 
 private:
   friend class boost::iterator_core_access;
 
   auto dereference() const
   {
-    return *(m_begin + (base_reference() - m_begin) % (m_end - m_begin));
+    return *(m_begin + (base_reference() - m_begin) % m_size);
   }
 
   It m_begin;
-  It m_end;
+  size_t m_size;
 };
 
 template<class It>
