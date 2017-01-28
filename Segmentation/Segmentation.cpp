@@ -209,7 +209,7 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
-std::vector<Point> segmentationIter(std::vector<Point> points)
+auto segmentationIter(const std::vector<Point>& points)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -229,7 +229,7 @@ std::vector<Point> segmentationIter(std::vector<Point> points)
 
   end = std::partition_point(begin, end, isRight);
 
-  return std::vector<Point>(begin, end);
+  return boost::make_iterator_range(begin, end);
 }
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
