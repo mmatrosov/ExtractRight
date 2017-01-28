@@ -3,8 +3,7 @@
 #include <boost/algorithm/cxx11/partition_point.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 
-#include <gtest/gtest.h>
-
+#include <iostream>
 #include <vector>
 #include <list>
 
@@ -327,6 +326,9 @@ auto segmentationRange(It first, It last)
   return boost::make_iterator_range(begin, end);
 }
 
+#define EXPECT_TRUE(x) if(!(x)) throw std::runtime_error("test failed")
+#define EXPECT_THROW(x, E) do { try { x; } catch (const E&) { break; } throw std::runtime_error("test failed"); } while (false)
+
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
   EXPECT_TRUE(segmentationNaive(input) == answer);
@@ -350,70 +352,88 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(segmentationRange(input.begin(), input.end()), std::runtime_error);
 }
 
-TEST(Segmentation, RightLeft)
+void testRightLeft()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { 1, 1 }, { 1, 2 }, { -1, 3 } },
-  { { 1, 1 }, { 1, 2 } }));
+  { { 1, 1 }, { 1, 2 } });
 }
 
-TEST(Segmentation, LeftRight)
+void testLeftRight()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { -1, 1 }, { 1, 2 }, { 1, 3 } },
-  { { 1, 2 }, { 1, 3 } }));
+  { { 1, 2 }, { 1, 3 } });
 }
 
-TEST(Segmentation, LeftRightLeft)
+void testLeftRightLeft()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { -1, 1 }, { 1, 2 }, { 1, 3 }, { -1, 4 } },
-  { { 1, 2 }, { 1, 3 } }));
+  { { 1, 2 }, { 1, 3 } });
 }
 
-TEST(Segmentation, RightLeftRight)
+void testRightLeftRight()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { 1, 1 }, { -1, 2 }, { 1, 3 } },
-  { { 1, 3 }, { 1, 1 } }));
+  { { 1, 3 }, { 1, 1 } });
 }
 
-TEST(Segmentation, OnlyLeft)
+void testOnlyLeft()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { -1, 1 }, { -1, 2 }, { -1, 3 } },
-  {}));
+  {});
 }
 
-TEST(Segmentation, OnlyRight)
+void testOnlyRight()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   { { 1, 1 }, { 1, 2 }, { 1, 3 } },
-  { { 1, 1 }, { 1, 2 }, { 1, 3 } }));
+  { { 1, 1 }, { 1, 2 }, { 1, 3 } });
 }
 
-TEST(Segmentation, Empty)
+void testEmpty()
 {
-  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  checkAnswer(
   {},
-  {}));
+  {});
 }
 
-TEST(Segmentation, Incorrect1)
+void testIncorrect1()
 {
-  EXPECT_NO_FATAL_FAILURE(checkFailure(
-  { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } }));
+  checkFailure(
+  { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } });
 }
 
-TEST(Segmentation, Incorrect2)
+void testIncorrect2()
 {
-  EXPECT_NO_FATAL_FAILURE(checkFailure(
-  { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } }));
+  checkFailure(
+  { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
 int main(int argc, char* argv[])
 {
-  ::testing::InitGoogleTest(&argc, argv);
+  try
+  {
+    testRightLeft();
+    testLeftRight();
+    testLeftRightLeft();
+    testRightLeftRight();
+    testOnlyLeft();
+    testOnlyRight();
+    testEmpty();
+    testIncorrect1();
+    testIncorrect2();
+  }
+  catch (const std::runtime_error&)
+  {
+    std::cout << "Failure!" << std::endl;
+    return EXIT_FAILURE;
+  }
 
-  return RUN_ALL_TESTS();
+  std::cout << "Success." << std::endl;
+
+  return EXIT_SUCCESS;
 }
