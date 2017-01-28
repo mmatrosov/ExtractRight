@@ -1,11 +1,22 @@
-#include "Common.h"
-
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
 
+#include <gtest/gtest.h>
+
 #include <vector>
+
+struct Point
+{
+  double x;
+  double y;
+};
+
+inline bool operator==(const Point& a, const Point& b)
+{
+  return a.x == b.x && a.y == b.y;
+}
 
 std::vector<Point> segmentationNaive(const std::vector<Point>& points)
 {
@@ -219,4 +230,91 @@ std::vector<Point> segmentationIter(std::vector<Point> points)
   end = std::partition_point(begin, end, isRight);
 
   return std::vector<Point>(begin, end);
+}
+
+void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
+{
+  EXPECT_TRUE(segmentationNaive(input) == answer);
+  EXPECT_TRUE(segmentationNaiveRefactored(input) == answer);
+  EXPECT_TRUE(segmentation(input) == answer);
+  EXPECT_TRUE(segmentationIter(input) == answer);
+}
+
+void checkFailure(const std::vector<Point>& input)
+{
+  auto answer = segmentationNaive(input);
+  EXPECT_TRUE(answer.size() == 1);
+  EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
+
+  EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
+  EXPECT_THROW(segmentation(input), std::runtime_error);
+  EXPECT_THROW(segmentationIter(input), std::runtime_error);
+}
+
+TEST(Segmentation, RightLeft)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { 1, 1 }, { 1, 2 }, { -1, 1 } },
+  { { 1, 1 }, { 1, 2 } }));
+}
+
+TEST(Segmentation, LeftRight)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { -1, 1 }, { 1, 1 }, { 1, 2 } },
+  { { 1, 1 }, { 1, 2 } }));
+}
+
+TEST(Segmentation, LeftRightLeft)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { -1, 1 }, { 1, 2 }, { 1, 3 }, { -1, 4 } },
+  { { 1, 2 }, { 1, 3 } }));
+}
+
+TEST(Segmentation, RightLeftRight)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { 1, 1 }, { -1, 2 }, { 1, 3 } },
+  { { 1, 3 }, { 1, 1 } }));
+}
+
+TEST(Segmentation, OnlyLeft)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { -1, 1 }, { -1, 2 }, { -1, 3 } },
+  {}));
+}
+
+TEST(Segmentation, OnlyRight)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  { { 1, 1 }, { 1, 2 }, { 1, 3 } },
+  { { 1, 1 }, { 1, 2 }, { 1, 3 } }));
+}
+
+TEST(Segmentation, Empty)
+{
+  EXPECT_NO_FATAL_FAILURE(checkAnswer(
+  {},
+  {}));
+}
+
+TEST(Segmentation, Incorrect1)
+{
+  EXPECT_NO_FATAL_FAILURE(checkFailure(
+  { { -1, 1 }, { 1, 1 }, { -1, 1 }, { 1, 2 } }));
+}
+
+TEST(Segmentation, Incorrect2)
+{
+  EXPECT_NO_FATAL_FAILURE(checkFailure(
+  { { 1, 2 }, { -1, 1 }, { 1, 1 }, { -1, 1 } }));
+}
+
+int main(int argc, char* argv[])
+{
+  ::testing::InitGoogleTest(&argc, argv);
+
+  return RUN_ALL_TESTS();
 }
