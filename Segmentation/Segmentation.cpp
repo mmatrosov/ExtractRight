@@ -3,7 +3,7 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include <boost/iterator/iterator_adaptor.hpp>
 
 #include <vector>
 
@@ -174,42 +174,20 @@ std::vector<Point> segmentation(std::vector<Point> points)
 }
 
 template<class It>
-class WrappingIterator : public boost::iterator_facade<
-  WrappingIterator<It>, typename std::iterator_traits<It>::value_type, boost::random_access_traversal_tag>
+class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It>
 {
 public:
   WrappingIterator() = default;
-  WrappingIterator(It it, It begin, It end) : m_it(it), m_begin(begin), m_end(end) {}
+  WrappingIterator(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_end(end) {}
 
 private:
   friend class boost::iterator_core_access;
 
-  void increment()
+  auto dereference() const
   {
-    ++m_it;
+    return *(m_begin + (base_reference() - m_begin) % (m_end - m_begin));
   }
 
-  bool equal(const WrappingIterator& other) const
-  {
-    return m_it == other.m_it;
-  }
-
-  typename std::iterator_traits<It>::reference dereference() const
-  {
-    return *(m_begin + (m_it - m_begin) % (m_end - m_begin));
-  }
-
-  void advance(ptrdiff_t n)
-  {
-    m_it += n;
-  }
-
-  ptrdiff_t distance_to(const WrappingIterator& other) const
-  {
-    return std::distance(m_it, other.m_it);
-  }
-
-  It m_it;
   It m_begin;
   It m_end;
 };
