@@ -1,3 +1,5 @@
+#define _ITERATOR_DEBUG_LEVEL 0
+
 #include <boost/range/algorithm.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
@@ -198,7 +200,7 @@ public:
 private:
   friend class boost::iterator_core_access;
 
-  auto dereference() const
+  decltype(auto) dereference() const  // Note how auto is not applicable!
   {
     return *(m_begin + (base_reference() - m_begin) % m_size);
   }
@@ -225,7 +227,7 @@ private:
 
   bool equal(const WrappingIterator2& other) const
   {
-    return base_reference() == other.base_reference() && m_wrapped == other.m_wrapped;
+    return base_reference() == other.base_reference() && m_wrapped == other.m_wrapped || m_begin == m_end;
   }
 
   void increment()
