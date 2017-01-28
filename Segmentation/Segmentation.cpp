@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <vector>
+#include <list>
 
 struct Point
 {
@@ -16,6 +17,10 @@ struct Point
 inline bool operator==(const Point& a, const Point& b)
 {
   return a.x == b.x && a.y == b.y;
+}
+inline bool operator!=(const Point& a, const Point& b)
+{
+  return !(a == b);
 }
 
 std::vector<Point> segmentationNaive(const std::vector<Point>& points)
@@ -209,6 +214,71 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
+template<class It>
+class WrappingIterator2 : public boost::iterator_adaptor<WrappingIterator2<It>, It>
+{
+public:
+  WrappingIterator2() = default;
+  WrappingIterator2(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_end(end) {}
+
+private:
+  friend class boost::iterator_core_access;
+
+  bool equal(const WrappingIterator2& other) const
+  {
+    return base_reference() == other.base_reference() && m_wrapped == other.m_wrapped;
+  }
+
+  void increment()
+  {
+    if (++base_reference() == m_end)
+    {
+      base_reference() = m_begin;
+      m_wrapped = true;
+    }
+  }
+
+  void decrement()
+  {
+    if (base_reference() == m_begin)
+    {
+      base_reference() = m_end;
+      m_wrapped = false;
+    }
+    --base_reference();
+  }
+
+  void advance(typename super_t::difference_type n)
+  {
+    base_reference() += n;
+    if (base_reference() >= m_end)
+    {
+      base_reference() -= (m_end - m_begin);
+      m_wrapped = true;
+    }
+  }
+
+  auto unwrappedBase() const
+  {
+    return base() + (m_wrapped ? m_end - m_begin : 0);
+  }
+
+  auto distance_to(const WrappingIterator2& other) const
+  {
+    return other.unwrappedBase() - unwrappedBase();
+  }
+
+  It m_begin;
+  It m_end;
+  bool m_wrapped = false;
+};
+
+template<class It>
+auto makeWrappingIterator2(It it, It begin, It end)
+{
+  return WrappingIterator2<It>(it, begin, end);
+}
+
 auto segmentationIter(const std::vector<Point>& points)
 {
   using namespace boost::range;
@@ -232,12 +302,40 @@ auto segmentationIter(const std::vector<Point>& points)
   return boost::make_iterator_range(begin, end);
 }
 
+template<class It>
+auto segmentationRange(It first, It last)
+{
+  using namespace boost::range;
+  using namespace boost::algorithm;
+
+  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+  auto middle = adjacent_find(first, last,
+    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+
+  middle = middle != last ? std::next(middle) : first;
+
+  auto begin = makeWrappingIterator2(middle, first, last);
+  auto end = begin;
+  std::advance(end, std::distance(first, last));
+
+  if (!std::is_partitioned(begin, end, isRight))
+    throw std::runtime_error("Unexpected order");
+
+  end = std::partition_point(begin, end, isRight);
+
+  return boost::make_iterator_range(begin, end);
+}
+
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
   EXPECT_TRUE(segmentationNaive(input) == answer);
   EXPECT_TRUE(segmentationNaiveRefactored(input) == answer);
   EXPECT_TRUE(segmentation(input) == answer);
   EXPECT_TRUE(segmentationIter(input) == answer);
+  auto inputList = std::list<Point>(input.begin(), input.end());
+  EXPECT_TRUE(segmentationRange(inputList.begin(), inputList.end()) == answer);
+  EXPECT_TRUE(segmentationRange(input.begin(), input.end()) == answer);
 }
 
 void checkFailure(const std::vector<Point>& input)
@@ -249,6 +347,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
   EXPECT_THROW(segmentation(input), std::runtime_error);
   EXPECT_THROW(segmentationIter(input), std::runtime_error);
+  EXPECT_THROW(segmentationRange(input.begin(), input.end()), std::runtime_error);
 }
 
 TEST(Segmentation, RightLeft)
