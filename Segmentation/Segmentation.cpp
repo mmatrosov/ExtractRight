@@ -368,8 +368,13 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(segmentationRange(inputList.begin(), inputList.end()) == answer);
   EXPECT_TRUE(segmentationRange(input.begin(), input.end()) == answer);
 
-  EXPECT_TRUE(segmentationRangeJoined(inputList.begin(), inputList.end()) == answer);
   EXPECT_TRUE(segmentationRangeJoined(input.begin(), input.end()) == answer);
+
+  auto outputRange = segmentationRangeJoined(inputList.begin(), inputList.end());
+  EXPECT_TRUE(outputRange == answer);
+  Point p{};
+  p = *outputRange.begin();
+  *outputRange.begin() = p;
 }
 
 void checkFailure(const std::vector<Point>& input)
