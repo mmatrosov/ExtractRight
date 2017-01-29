@@ -1,5 +1,3 @@
-#define _ITERATOR_DEBUG_LEVEL 0
-
 #include <boost/range/algorithm.hpp>
 #include <boost/range/join.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
@@ -191,6 +189,7 @@ std::vector<Point> segmentation(std::vector<Point> points)
   return points;
 }
 
+// Provide pointers instead of iterators to avoid debug range checks in VS
 template<class It>
 class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It>
 {
@@ -204,7 +203,7 @@ public:
 private:
   friend class boost::iterator_core_access;
 
-  typename Base::reference dereference() const  // Note how auto is not applicable!
+  typename Base::reference dereference() const  // Can use decltype(auto) instead, but no just auto!
   {
     return *(m_begin + (this->base_reference() - m_begin) % m_size);
   }
