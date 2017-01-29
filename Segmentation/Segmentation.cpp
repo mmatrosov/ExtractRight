@@ -196,14 +196,15 @@ class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It
 {
 public:
   WrappingIterator() = default;
-  WrappingIterator(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_size(end - begin) {}
+  WrappingIterator(It it, It begin, It end) : 
+    WrappingIterator::iterator_adaptor_(it), m_begin(begin), m_size(end - begin) {}
 
 private:
   friend class boost::iterator_core_access;
 
   decltype(auto) dereference() const  // Note how auto is not applicable!
   {
-    return *(m_begin + (base_reference() - m_begin) % m_size);
+    return *(m_begin + (this->base_reference() - m_begin) % m_size);
   }
 
   It m_begin;
@@ -221,10 +222,13 @@ class WrappingIterator2 : public boost::iterator_adaptor<WrappingIterator2<It>, 
 {
 public:
   WrappingIterator2() = default;
-  WrappingIterator2(It it, It begin, It end) : iterator_adaptor_(it), m_begin(begin), m_end(end) {}
+  WrappingIterator2(It it, It begin, It end) :
+    WrappingIterator2::iterator_adaptor_(it), m_begin(begin), m_end(end) {}
 
 private:
   friend class boost::iterator_core_access;
+
+  using boost::iterator_adaptor<WrappingIterator2<It>, It>::base_reference;
 
   bool equal(const WrappingIterator2& other) const
   {
@@ -250,7 +254,7 @@ private:
     --base_reference();
   }
 
-  void advance(typename super_t::difference_type n)
+  void advance(typename WrappingIterator2::iterator_adaptor_::difference_type n)
   {
     base_reference() += n;
     if (base_reference() >= m_end)
@@ -262,7 +266,7 @@ private:
 
   auto unwrappedBase() const
   {
-    return base() + (m_wrapped ? m_end - m_begin : 0);
+    return this->base() + (m_wrapped ? m_end - m_begin : 0);
   }
 
   auto distance_to(const WrappingIterator2& other) const
@@ -296,7 +300,7 @@ auto segmentationIter(const std::vector<Point>& points)
   auto begin = makeWrappingIterator(middle, points.begin(), points.end());
   auto end = begin + points.size();
 
-  if (!std::is_partitioned(begin, end, isRight))
+  if (!std::is_partitioned(begin, end, isRight))  // Note how std:: is necessary
     throw std::runtime_error("Unexpected order");
 
   end = std::partition_point(begin, end, isRight);
