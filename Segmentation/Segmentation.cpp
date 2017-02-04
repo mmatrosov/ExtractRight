@@ -241,16 +241,14 @@ auto segmentationIter(const std::vector<Point>& points)
   return boost::make_iterator_range(begin, end);
 }
 
-template<class It>
-auto segmentationRangeJoined(It first, It last)
+template<class It, class Predicate>
+auto segmentationRange(It first, It last, Predicate p)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
 
-  auto isRight = [](const Point& pt) { return pt.x >= 0; };
-
   auto middle = adjacent_find(first, last,
-    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+    [&](auto&& a, auto&& b) { return !p(a) && p(b); });
 
   middle = middle != last ? std::next(middle) : first;
 
@@ -258,16 +256,22 @@ auto segmentationRangeJoined(It first, It last)
     boost::make_iterator_range(middle, last), 
     boost::make_iterator_range(first, middle));
 
-  if (!is_partitioned(rotated, isRight))
+  if (!is_partitioned(rotated, p))
     throw std::runtime_error("Unexpected order");
 
-  auto end = partition_point(rotated, isRight);
+  auto end = partition_point(rotated, p);
 
   return boost::make_iterator_range(rotated.begin(), end);
 }
 
 #define EXPECT_TRUE(x) if(!(x)) throw std::runtime_error("test failed")
 #define EXPECT_THROW(x, E) do { try { x; } catch (const E&) { break; } throw std::runtime_error("test failed"); } while (false)
+
+bool isRight(const Point& pt)
+{
+  return pt.x >= 0;
+};
+
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
@@ -276,10 +280,10 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(segmentation(input) == answer);
   EXPECT_TRUE(segmentationIter(input) == answer);
 
-  EXPECT_TRUE(segmentationRangeJoined(input.begin(), input.end()) == answer);
+  EXPECT_TRUE(segmentationRange(input.begin(), input.end(), isRight) == answer);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = segmentationRangeJoined(inputList.begin(), inputList.end());
+  auto outputRange = segmentationRange(inputList.begin(), inputList.end(), isRight);
   EXPECT_TRUE(outputRange == answer);
 
   Point p{};
@@ -296,7 +300,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
   EXPECT_THROW(segmentation(input), std::runtime_error);
   EXPECT_THROW(segmentationIter(input), std::runtime_error);
-  EXPECT_THROW(segmentationRangeJoined(input.begin(), input.end()), std::runtime_error);
+  EXPECT_THROW(segmentationRange(input.begin(), input.end(), isRight), std::runtime_error);
 }
 
 void testRightLeft()
