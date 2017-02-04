@@ -23,7 +23,7 @@ inline bool operator!=(const Point& a, const Point& b)
   return !(a == b);
 }
 
-std::vector<Point> segmentationNaive(const std::vector<Point>& points)
+const std::vector<Point> segmentationNaive(const std::vector<Point>& points)
 {
   std::vector<Point> result;
   result.clear();
@@ -32,24 +32,26 @@ std::vector<Point> segmentationNaive(const std::vector<Point>& points)
     return result;
 
   int p = 0;
-  for (int i = 1; i < points.size(); ++i)
+  bool found = false;
+  for (int i = 1; i < points.size() && ~found; ++i)
     if (points[i - 1].x < 0 && points[i].x >= 0)
     {
       p = i;
-      break;
+      found = true;
     }
 
   int q = 0;
-  for (int i = 1; i < points.size(); ++i)
+  found = false;
+  for (int i = 1; i < points.size() && ~found; ++i)
     if (points[i - 1].x >= 0 && points[i].x < 0)
     {
       q = i;
-      break;
+      found = true;
     }
 
   if (p == q)
   {
-    if (points[0].x >= 0)
+    if ((*points.begin()).x >= 0)
       return points;
     else
       return result;
@@ -240,6 +242,8 @@ auto segmentationIter(const std::vector<Point>& points)
 
   return boost::make_iterator_range(begin, end);
 }
+
+// gsl::span?
 
 template<class It, class Predicate>
 auto segmentationRange(It first, It last, Predicate p)
