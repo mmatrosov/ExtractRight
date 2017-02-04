@@ -12,6 +12,9 @@ struct Point
 {
   double x;
   double y;
+
+  Point() = default;
+  Point(double x, double y) : x(x), y(y) {}
 };
 
 inline bool operator==(const Point& a, const Point& b)
@@ -95,28 +98,29 @@ const std::vector<Point> segmentationNaive(const std::vector<Point>& points)
 
 std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
 {
-  auto isRight = [](const Point& pt) { return pt.x >= 0; };
-
-  int p = 0;
-  int q = 0;
-  for (int i = 1; i < points.size(); ++i)
-  {
-    if (!isRight(points[i - 1]) && isRight(points[i]))
-      p = i;
-    if (isRight(points[i - 1]) && !isRight(points[i]))
-      q = i;
-  }
-
   std::vector<Point> result;
 
-  if (p == q)
-  {
-    if (!points.empty() && isRight(points[0]))
-      result = points;
+  if (points.empty())
     return result;
-  }
 
-  auto iterate = [&](int from, int to, bool shouldBeRight)
+  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+  auto findBoundary = [&](bool rightToLeft)
+  {
+    for (int i = 1; i < points.size(); ++i)
+      if (isRight(points[i - 1]) == rightToLeft && 
+          isRight(points[i]) != rightToLeft)
+        return i;
+    return 0;
+  };
+
+  int p = findBoundary(false);
+  int q = findBoundary(true);
+
+  if (p == q)
+    return isRight(points[0]) ? points : result;
+
+  auto appendResult = [&](int from, int to, bool shouldBeRight)
   {
     int i = from;
     while (i != to)
@@ -130,8 +134,8 @@ std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
     }
   };
 
-  iterate(p, q, true);
-  iterate(q, p, false);
+  appendResult(p, q, true);
+  appendResult(q, p, false);
 
   return result;
 }
