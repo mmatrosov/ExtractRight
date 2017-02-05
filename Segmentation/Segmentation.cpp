@@ -280,6 +280,34 @@ bool isRight(const Point& pt)
   return pt.x >= 0;
 };
 
+void used()
+{
+#if 0
+  using namespace boost::range;
+  using namespace boost::algorithm;
+
+  // lambda functions (including generic)
+  // ternary operator
+  // exceptions
+  // transient parameters
+  std::vector<int>::empty();
+  adjacent_find();
+  rotate();
+  is_partitioned();
+  partition_point();
+  std::next();
+
+  // custom make-function
+  // template parameters for iterators
+  // template parameters for predicates
+  // function return type deduction 
+  boost::range;
+  boost::algorithm;
+  boost::iterator_adaptor<int> a;
+  boost::make_iterator_range();
+  boost::join();
+#endif
+}
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
