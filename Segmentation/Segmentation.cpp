@@ -26,7 +26,7 @@ inline bool operator!=(const Point& a, const Point& b)
   return !(a == b);
 }
 
-const std::vector<Point> segmentationNaive(const std::vector<Point>& points)
+const std::vector<Point> extract(const std::vector<Point>& points)
 {
   std::vector<Point> result;
   result.clear();
@@ -96,7 +96,7 @@ const std::vector<Point> segmentationNaive(const std::vector<Point>& points)
   return std::move(result);
 }
 
-std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
+std::vector<Point> extractRefactored(const std::vector<Point>& points)
 {
   std::vector<Point> result;
 
@@ -140,7 +140,7 @@ std::vector<Point> segmentationNaiveRefactored(const std::vector<Point>& points)
   return result;
 }
 
-std::vector<Point> segmentationMirrada(const std::vector<Point>& points)
+std::vector<Point> extractMirrada(const std::vector<Point>& points)
 {
   using PointsIterator = std::vector<Point>::const_iterator;
 
@@ -174,7 +174,7 @@ std::vector<Point> segmentationMirrada(const std::vector<Point>& points)
   return segment;
 }
 
-std::vector<Point> segmentation(std::vector<Point> points)
+std::vector<Point> extractRight(std::vector<Point> points)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -224,7 +224,7 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
-auto segmentationIter(const std::vector<Point>& points)
+auto extractRightRange(const std::vector<Point>& points)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -250,7 +250,7 @@ auto segmentationIter(const std::vector<Point>& points)
 // gsl::span?
 
 template<class It, class Predicate>
-auto segmentationRange(It first, It last, Predicate p)
+auto extractIf(It first, It last, Predicate p)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -283,15 +283,15 @@ bool isRight(const Point& pt)
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
-  EXPECT_TRUE(segmentationNaive(input) == answer);
-  EXPECT_TRUE(segmentationNaiveRefactored(input) == answer);
-  EXPECT_TRUE(segmentation(input) == answer);
-  EXPECT_TRUE(segmentationIter(input) == answer);
+  EXPECT_TRUE(extract(input) == answer);
+  EXPECT_TRUE(extractRefactored(input) == answer);
+  EXPECT_TRUE(extractRight(input) == answer);
+  EXPECT_TRUE(extractRightRange(input) == answer);
 
-  EXPECT_TRUE(segmentationRange(input.begin(), input.end(), isRight) == answer);
+  EXPECT_TRUE(extractIf(input.begin(), input.end(), isRight) == answer);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = segmentationRange(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = extractIf(inputList.begin(), inputList.end(), isRight);
   EXPECT_TRUE(outputRange == answer);
 
   Point p{};
@@ -301,14 +301,14 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 
 void checkFailure(const std::vector<Point>& input)
 {
-  auto answer = segmentationNaive(input);
+  auto answer = extract(input);
   EXPECT_TRUE(answer.size() == 1);
   EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
 
-  EXPECT_THROW(segmentationNaiveRefactored(input), std::runtime_error);
-  EXPECT_THROW(segmentation(input), std::runtime_error);
-  EXPECT_THROW(segmentationIter(input), std::runtime_error);
-  EXPECT_THROW(segmentationRange(input.begin(), input.end(), isRight), std::runtime_error);
+  EXPECT_THROW(extractRefactored(input), std::runtime_error);
+  EXPECT_THROW(extractRight(input), std::runtime_error);
+  EXPECT_THROW(extractRightRange(input), std::runtime_error);
+  EXPECT_THROW(extractIf(input.begin(), input.end(), isRight), std::runtime_error);
 }
 
 void testRightLeft()
