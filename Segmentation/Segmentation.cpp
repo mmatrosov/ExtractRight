@@ -198,28 +198,68 @@ std::vector<Point> extractRight(std::vector<Point> points)
   return points;
 }
 
-// Provide pointers instead of iterators to avoid debug range checks in VS
 template<class It>
-class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It>
+class WrappingIterator : public boost::iterator_facade<WrappingIterator<It>, 
+                                                       typename It::value_type, 
+                                                       boost::random_access_traversal_tag, 
+                                                       typename It::reference>
 {
-  using Base = boost::iterator_adaptor<WrappingIterator<It>, It>;
-
 public:
   WrappingIterator() = default;
   WrappingIterator(It it, It begin, It end) : 
-    Base(it), m_end(end), m_size(end - begin) {}
+    m_begin(begin), m_size(end - begin), m_offset(it - begin) {}
+
+  template <class OtherIt>
+  WrappingIterator(const WrappingIterator<OtherIt>& other) :
+    m_begin(other.m_begin), m_size(other.m_size), m_offset(other.m_offset) {}
 
 private:
   friend class boost::iterator_core_access;
 
-  typename Base::reference dereference() const  // Can use decltype(auto) instead, but no just auto!
+  template<class> friend class WrappingIterator;
+
+  using Base = boost::iterator_facade<WrappingIterator<It>, 
+                                      typename It::value_type, 
+                                      boost::random_access_traversal_tag, 
+                                      typename It::reference>;
+
+  typename Base::reference dereference() const
   {
-    auto it = this->base_reference();
-    return *(it < m_end ? it : it - m_size);
+    return *(m_begin + (m_offset < m_size ? m_offset : m_offset - m_size));
   }
 
-  It m_end;
-  ptrdiff_t m_size;
+  template <class OtherIt>
+  bool equal(const WrappingIterator<OtherIt>& other) const
+  {
+    assert(other.m_begin == m_begin && other.m_size == m_size);
+    return other.m_offset == m_offset;
+  }
+
+  void advance(typename Base::difference_type n)
+  {
+    m_offset += n;
+  }
+
+  void increment()
+  {
+    ++m_offset;
+  }
+
+  void decrement()
+  {
+    --m_offset;
+  }
+
+  template <class OtherIt>
+  typename Base::difference_type distance_to(const WrappingIterator<OtherIt>& other) const
+  {
+    assert(other.m_begin == m_begin && other.m_size == m_size);
+    return other.m_offset - m_offset;
+  }
+
+  It m_begin;
+  size_t m_size;
+  size_t m_offset;
 };
 
 template<class It>
@@ -321,6 +361,12 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(extractRightRange(input) == answer);
 
   EXPECT_TRUE(extractIf(input.begin(), input.end(), isRight) == answer);
+
+  auto copy = input;
+  auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
+  auto it = makeWrappingIterator(copy.begin(), copy.begin(), copy.end());
+  cit = it;
+  auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
   auto outputRange = extractIf(inputList.begin(), inputList.end(), isRight);
