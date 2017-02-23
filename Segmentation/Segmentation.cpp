@@ -281,12 +281,12 @@ auto extractRightRange(const std::vector<Point>& points)
   middle = middle != points.end() ? std::next(middle) : points.begin();
 
   auto begin = makeWrappingIterator(middle, points.begin(), points.end());
-  auto end = begin + points.size();
+  auto rotated = boost::make_iterator_range(begin, begin + points.size());
 
-  if (!std::is_partitioned(begin, end, isRight))  // Note how std:: is necessary
+  if (!is_partitioned(rotated, isRight))
     throw std::runtime_error("Unexpected order");
 
-  end = std::partition_point(begin, end, isRight);
+  auto end = partition_point(rotated, isRight);
 
   return boost::make_iterator_range(begin, end);
 }
