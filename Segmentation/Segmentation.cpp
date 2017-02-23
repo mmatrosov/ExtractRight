@@ -204,18 +204,19 @@ class WrappingIterator : public boost::iterator_adaptor<WrappingIterator<It>, It
 public:
   WrappingIterator() = default;
   WrappingIterator(It it, It begin, It end) : 
-    Base(it), m_begin(begin), m_size(end - begin) {}
+    Base(it), m_end(end), m_size(end - begin) {}
 
 private:
   friend class boost::iterator_core_access;
 
   typename Base::reference dereference() const  // Can use decltype(auto) instead, but no just auto!
   {
-    return *(m_begin + (this->base_reference() - m_begin) % m_size);
+    auto it = this->base_reference();
+    return *(it < m_end ? it : it - m_size);
   }
 
-  It m_begin;
-  size_t m_size;
+  It m_end;
+  ptrdiff_t m_size;
 };
 
 template<class It>
