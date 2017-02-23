@@ -3,6 +3,7 @@
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <iostream>
 #include <vector>
@@ -10,11 +11,13 @@
 
 struct Point
 {
-  double x;
-  double y;
+  using T = double;
+
+  T x;
+  T y;
 
   Point() = default;
-  Point(double x, double y) : x(x), y(y) {}
+  Point(T x, T y) : x(x), y(y) {}
 };
 
 inline bool operator==(const Point& a, const Point& b)
@@ -401,6 +404,52 @@ void testIncorrect2()
   { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
+Point::T g_accum;
+
+template<class T>
+void traverseRange(T&& range)
+{
+  static const int trials = 20;
+  Point::T sum = 0;
+  for (int i = 0; i < trials; ++i)
+    for (const Point& v : range)
+      sum += v.x;
+  g_accum += sum;
+}
+
+void testPerformance()
+{
+  std::cout << "Profiling..." << std::endl;
+
+  static const int count = 100'000'000;
+  std::vector<Point> points(count, { -1, 1 });
+  std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
+  std::fill_n(points.rbegin(), count / 4, Point { 1, 1 });
+
+  auto r1 = extractRight(points);
+  auto r2 = extractRightRange(points);
+  auto r3 = extractIf(points.begin(), points.end(), isRight);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    std::cout << "Trial " << i << "..." << std::endl;
+    {
+      boost::timer::auto_cpu_timer timer("%w seconds for vector\n");
+      traverseRange(r1);
+    }
+    {
+      boost::timer::auto_cpu_timer timer("%w seconds for WrappingIterator\n");
+      traverseRange(r2);
+    }
+    {
+      boost::timer::auto_cpu_timer timer("%w seconds for joined iterator\n");
+      traverseRange(r3);
+    }
+  }
+
+  std::cout << "Accumulated: " << g_accum << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
   try
@@ -422,6 +471,8 @@ int main(int argc, char* argv[])
   }
 
   std::cout << "Success." << std::endl;
+
+  testPerformance();
 
   return EXIT_SUCCESS;
 }
