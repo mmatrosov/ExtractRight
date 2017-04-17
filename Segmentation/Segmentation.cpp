@@ -186,9 +186,9 @@ std::vector<Point> extractRight(std::vector<Point> points)
 
   auto middle = adjacent_find(points,
     [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+  middle = middle != points.end() ? std::next(middle) : points.begin();
 
-  if (middle != points.end())
-    rotate(points, std::next(middle));
+  rotate(points, middle);
 
   if (!is_partitioned(points, isRight))
     throw std::runtime_error("Unexpected order");
@@ -301,7 +301,6 @@ auto extractIf(It first, It last, Predicate p)
 
   auto middle = adjacent_find(first, last,
     [&](auto&& a, auto&& b) { return !p(a) && p(b); });
-
   middle = middle != last ? std::next(middle) : first;
 
   auto rotated = boost::join(
