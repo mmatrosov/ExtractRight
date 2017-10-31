@@ -17,7 +17,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{040CC4FD-688D-4683-B1D7-6E68234AB29B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>Segmentation</RootNamespace>
+    <RootNamespace>ExtractRight</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -116,7 +116,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Segmentation.cpp" />
+    <ClCompile Include="ExtractRight.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
