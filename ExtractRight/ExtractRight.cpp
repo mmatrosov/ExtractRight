@@ -582,15 +582,16 @@ void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 template<class T>
 void benchmarkTraverse(benchmark::State& state)
 {
+  using namespace boost::range;
+
   const auto points = getTestArray();
   auto range = T()(points);
+  std::vector<Point> result(range.size());
 
   for (auto _ : state)
   {
-    double sum = 0;
-    for (const auto& p : range)
-      sum += p.x;
-    benchmark::DoNotOptimize(sum);
+    copy(range, result.begin());
+    benchmark::DoNotOptimize(result);
   }
 }
 BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoBasicCopy)->Apply(setupTraverseBenchmark);
