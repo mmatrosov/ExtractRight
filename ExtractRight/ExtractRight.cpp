@@ -358,6 +358,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 {
   EXPECT_TRUE(extract(input) == answer);
   EXPECT_TRUE(extractRefactored(input) == answer);
+  EXPECT_TRUE(extractMirrada(input) == answer);
   EXPECT_TRUE(extractRight(input) == answer);
   EXPECT_TRUE(extractRightRange(input) == answer);
 
@@ -385,6 +386,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
 
   EXPECT_THROW(extractRefactored(input), std::runtime_error);
+  EXPECT_THROW(extractMirrada(input), std::runtime_error);
   EXPECT_THROW(extractRight(input), std::runtime_error);
   EXPECT_THROW(extractRightRange(input), std::runtime_error);
   EXPECT_THROW(extractIf(input.begin(), input.end(), isRight), std::runtime_error);
