@@ -200,7 +200,33 @@ public:
   }
 };
 
-class ExtractAlgoBasic
+class ExtractAlgoBasicCopy
+{
+public:
+  std::vector<Point> operator()(const std::vector<Point>& points) const
+  {
+    using namespace boost::range;
+    using namespace boost::algorithm;
+
+    auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+    auto middle = adjacent_find(points,
+      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+    middle = middle != points.end() ? std::next(middle) : points.begin();
+
+    std::vector<Point> result(points.size());
+    rotate_copy(points, middle, result.begin());
+
+    if (!is_partitioned(result, isRight))
+      throw std::runtime_error("Unexpected order");
+
+    result.erase(partition_point(result, isRight), result.end());
+
+    return result;
+  }
+};
+
+class ExtractAlgoBasicMove
 {
 public:
   std::vector<Point> operator()(std::vector<Point> points) const
@@ -327,6 +353,11 @@ public:
 class ExtractAlgoGeneric
 {
 public:
+  auto operator()(const std::vector<Point>& points) const
+  {
+    return operator()(points.begin(), points.end(), isRight);
+  }
+
   template<class It, class Predicate>
   auto operator()(It first, It last, Predicate p) const
   {
@@ -387,10 +418,10 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(ExtractNaive()(input) == answer);
   EXPECT_TRUE(ExtractRefactored()(input) == answer);
   EXPECT_TRUE(ExtractManual()(input) == answer);
-  EXPECT_TRUE(ExtractAlgoBasic()(input) == answer);
+  EXPECT_TRUE(ExtractAlgoBasicCopy()(input) == answer);
+  EXPECT_TRUE(ExtractAlgoBasicMove()(input) == answer);
   EXPECT_TRUE(ExtractAlgoWrappingIterator()(input) == answer);
-
-  EXPECT_TRUE(ExtractAlgoGeneric()(input.begin(), input.end(), isRight) == answer);
+  EXPECT_TRUE(ExtractAlgoGeneric()(input) == answer);
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -415,9 +446,10 @@ void checkFailure(const std::vector<Point>& input)
 
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
   EXPECT_THROW(ExtractManual()(input), std::runtime_error);
-  EXPECT_THROW(ExtractAlgoBasic()(input), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoBasicCopy()(input), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoBasicMove()(input), std::runtime_error);
   EXPECT_THROW(ExtractAlgoWrappingIterator()(input), std::runtime_error);
-  EXPECT_THROW(ExtractAlgoGeneric()(input.begin(), input.end(), isRight), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoGeneric()(input), std::runtime_error);
 }
 
 void testRightLeft()
@@ -490,62 +522,50 @@ std::vector<Point> getTestArray()
   return points;
 }
 
-constexpr int numIterations = 3;
+void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
+{
+  benchmark->Unit(benchmark::kMillisecond)->Iterations(3);
+}
 
-void BM_testNaive(benchmark::State& state)
+template<class T>
+void benchmarkExtractCopy(benchmark::State& state)
 {
   const auto points = getTestArray();
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(ExtractNaive()(points));
+    benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractManual)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractAlgoBasicCopy)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractAlgoBasicMove)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractAlgoGeneric)->Apply(setupExtractBenchmark);
 
-void BM_testManual(benchmark::State& state)
+void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
+{
+  benchmark->Unit(benchmark::kMillisecond)->Iterations(20);
+}
+
+template<class T>
+void benchmarkTraverse(benchmark::State& state)
 {
   const auto points = getTestArray();
+  auto range = T()(points);
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(ExtractManual()(points));
+    double sum = 0;
+    for (const auto& p : range)
+      sum += p.x;
+    benchmark::DoNotOptimize(sum);
   }
 }
-BENCHMARK(BM_testManual)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
-
-void BM_testAlgoBasic(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(ExtractAlgoBasic()(points));
-  }
-}
-BENCHMARK(BM_testAlgoBasic)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
-
-void BM_testAlgoWrappingIterator(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(ExtractAlgoWrappingIterator()(points)));
-  }
-}
-BENCHMARK(BM_testAlgoWrappingIterator)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
-
-void BM_testAlgoGeneric(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(ExtractAlgoGeneric()(points.begin(), points.end(), isRight)));
-  }
-}
-BENCHMARK(BM_testAlgoGeneric)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoBasicCopy)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoWrappingIterator)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoGeneric)->Apply(setupTraverseBenchmark);
 
 int main(int argc, char* argv[])
 {
