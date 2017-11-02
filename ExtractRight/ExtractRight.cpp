@@ -12,6 +12,9 @@
 #include <vector>
 #include <list>
 
+using namespace boost::range;
+using namespace boost::algorithm;
+
 struct Point
 {
   using T = double;
@@ -169,22 +172,20 @@ public:
   {
     using It = std::vector<Point>::const_iterator;
 
-    auto findLastLeft = [](It i, It end)
+    auto findFirstRight = [](It i, It end)
     {
-      while (i != end && i->x < 0) { ++i; }
-      return i;
+      return find_if(i, end, isRight);
     };
-    auto findLastRight = [](It i, It end)
+    auto findFirstLeft = [](It i, It end)
     {
-      while (i != end && i->x >= 0) { ++i; }
-      return i;
+      return find_if_not(i, end, isRight);
     };
 
     It begin1 = points.begin();
-    It end1 = findLastRight(begin1, points.end());
-    It begin2 = findLastLeft(end1, points.end());
-    It end2 = findLastRight(begin2, points.end());
-    It endPts = begin1 == end1 ? findLastLeft(end2, points.end()) : end2;
+    It end1 = findFirstLeft(begin1, points.end());
+    It begin2 = findFirstRight(end1, points.end());
+    It end2 = findFirstLeft(begin2, points.end());
+    It endPts = begin1 == end1 ? findFirstRight(end2, points.end()) : end2;
 
     if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
@@ -202,9 +203,6 @@ class ExtractAlgoBasicCopy
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
   {
-    using namespace boost::range;
-    using namespace boost::algorithm;
-
     auto isRight = [](const Point& pt) { return pt.x >= 0; };
 
     auto middle = adjacent_find(points,
@@ -228,9 +226,6 @@ class ExtractAlgoInplace
 public:
   void operator()(std::vector<Point>& points) const
   {
-    using namespace boost::range;
-    using namespace boost::algorithm;
-
     auto isRight = [](const Point& pt) { return pt.x >= 0; };
 
     auto middle = adjacent_find(points,
@@ -321,9 +316,6 @@ class ExtractAlgoWrappingIterator
 public:
   auto operator()(const std::vector<Point>& points) const
   {
-    using namespace boost::range;
-    using namespace boost::algorithm;
-
     auto isRight = [](const Point& pt) { return pt.x >= 0; };
 
     auto middle = adjacent_find(points, 
@@ -356,9 +348,6 @@ public:
   template<class It, class Predicate>
   auto operator()(It first, It last, Predicate p) const
   {
-    using namespace boost::range;
-    using namespace boost::algorithm;
-
     auto middle = adjacent_find(first, last,
       [&](auto&& a, auto&& b) { return !p(a) && p(b); });
     middle = middle != last ? std::next(middle) : first;
@@ -579,8 +568,6 @@ void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 template<class T>
 void traverse(benchmark::State& state)
 {
-  using namespace boost::range;
-
   const auto points = getTestArray();
   auto range = T()(points);
   std::vector<Point> result(range.size());
