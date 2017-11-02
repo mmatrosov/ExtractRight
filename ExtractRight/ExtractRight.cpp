@@ -170,22 +170,11 @@ class ExtractManual
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
   {
-    using It = std::vector<Point>::const_iterator;
-
-    auto findFirstRight = [](It i, It end)
-    {
-      return find_if(i, end, isRight);
-    };
-    auto findFirstLeft = [](It i, It end)
-    {
-      return find_if_not(i, end, isRight);
-    };
-
-    It begin1 = points.begin();
-    It end1 = findFirstLeft(begin1, points.end());
-    It begin2 = findFirstRight(end1, points.end());
-    It end2 = findFirstLeft(begin2, points.end());
-    It endPts = begin1 == end1 ? findFirstRight(end2, points.end()) : end2;
+    auto begin1 = points.begin();
+    auto end1 = find_if_not(begin1, points.end(), isRight);
+    auto begin2 = find_if(end1, points.end(), isRight);
+    auto end2 = find_if_not(begin2, points.end(), isRight);
+    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
 
     if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
