@@ -34,7 +34,7 @@ inline bool operator!=(const Point& a, const Point& b)
 
 #pragma warning (push)
 #pragma warning (disable : 4804)
-const std::vector<Point> extract(const std::vector<Point>& points)
+const std::vector<Point> extractNaive(const std::vector<Point>& points)
 {
   std::vector<Point> result;
   result.clear();
@@ -149,7 +149,7 @@ std::vector<Point> extractRefactored(const std::vector<Point>& points)
   return result;
 }
 
-std::vector<Point> extractMirrada(const std::vector<Point>& points)
+std::vector<Point> extractManual(const std::vector<Point>& points)
 {
   using PointsIterator = std::vector<Point>::const_iterator;
 
@@ -183,7 +183,7 @@ std::vector<Point> extractMirrada(const std::vector<Point>& points)
   return segment;
 }
 
-std::vector<Point> extractRight(std::vector<Point> points)
+std::vector<Point> extractAlgoBasic(std::vector<Point> points)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -274,7 +274,7 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
-auto extractRightRange(const std::vector<Point>& points)
+auto extractAlgoWrappingIterator(const std::vector<Point>& points)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -300,7 +300,7 @@ auto extractRightRange(const std::vector<Point>& points)
 // gsl::span?
 
 template<class It, class Predicate>
-auto extractIf(It first, It last, Predicate p)
+auto extractAlgoGeneric(It first, It last, Predicate p)
 {
   using namespace boost::range;
   using namespace boost::algorithm;
@@ -360,13 +360,13 @@ void used()
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
-  EXPECT_TRUE(extract(input) == answer);
+  EXPECT_TRUE(extractNaive(input) == answer);
   EXPECT_TRUE(extractRefactored(input) == answer);
-  EXPECT_TRUE(extractMirrada(input) == answer);
-  EXPECT_TRUE(extractRight(input) == answer);
-  EXPECT_TRUE(extractRightRange(input) == answer);
+  EXPECT_TRUE(extractManual(input) == answer);
+  EXPECT_TRUE(extractAlgoBasic(input) == answer);
+  EXPECT_TRUE(extractAlgoWrappingIterator(input) == answer);
 
-  EXPECT_TRUE(extractIf(input.begin(), input.end(), isRight) == answer);
+  EXPECT_TRUE(extractAlgoGeneric(input.begin(), input.end(), isRight) == answer);
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -375,7 +375,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = extractIf(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = extractAlgoGeneric(inputList.begin(), inputList.end(), isRight);
   EXPECT_TRUE(outputRange == answer);
 
   Point p{};
@@ -385,15 +385,15 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 
 void checkFailure(const std::vector<Point>& input)
 {
-  auto answer = extract(input);
+  auto answer = extractNaive(input);
   EXPECT_TRUE(answer.size() == 1);
   EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
 
   EXPECT_THROW(extractRefactored(input), std::runtime_error);
-  EXPECT_THROW(extractMirrada(input), std::runtime_error);
-  EXPECT_THROW(extractRight(input), std::runtime_error);
-  EXPECT_THROW(extractRightRange(input), std::runtime_error);
-  EXPECT_THROW(extractIf(input.begin(), input.end(), isRight), std::runtime_error);
+  EXPECT_THROW(extractManual(input), std::runtime_error);
+  EXPECT_THROW(extractAlgoBasic(input), std::runtime_error);
+  EXPECT_THROW(extractAlgoWrappingIterator(input), std::runtime_error);
+  EXPECT_THROW(extractAlgoGeneric(input.begin(), input.end(), isRight), std::runtime_error);
 }
 
 void testRightLeft()
@@ -474,54 +474,54 @@ void BM_testNaive(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extract(points));
+    benchmark::DoNotOptimize(extractNaive(points));
   }
 }
 BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
-void BM_testMirrada(benchmark::State& state)
+void BM_testManual(benchmark::State& state)
 {
   const auto points = getTestArray();
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extractMirrada(points));
+    benchmark::DoNotOptimize(extractManual(points));
   }
 }
-BENCHMARK(BM_testMirrada)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK(BM_testManual)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
-void BM_testVector(benchmark::State& state)
+void BM_testAlgoBasic(benchmark::State& state)
 {
   const auto points = getTestArray();
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extractRight(points));
+    benchmark::DoNotOptimize(extractAlgoBasic(points));
   }
 }
-BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK(BM_testAlgoBasic)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
-void BM_testWrappingIterator(benchmark::State& state)
+void BM_testAlgoWrappingIterator(benchmark::State& state)
 {
   const auto points = getTestArray();
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractRightRange(points)));
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractAlgoWrappingIterator(points)));
   }
 }
-BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK(BM_testAlgoWrappingIterator)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
-void BM_testGeneric(benchmark::State& state)
+void BM_testAlgoGeneric(benchmark::State& state)
 {
   const auto points = getTestArray();
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractIf(points.begin(), points.end(), isRight)));
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractAlgoGeneric(points.begin(), points.end(), isRight)));
   }
 }
-BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
+BENCHMARK(BM_testAlgoGeneric)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 int main(int argc, char* argv[])
 {
