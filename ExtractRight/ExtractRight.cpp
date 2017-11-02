@@ -32,177 +32,198 @@ inline bool operator!=(const Point& a, const Point& b)
   return !(a == b);
 }
 
-#pragma warning (push)
-#pragma warning (disable : 4804)
-const std::vector<Point> extractNaive(const std::vector<Point>& points)
+bool isRight(const Point& pt)
 {
-  std::vector<Point> result;
-  result.clear();
+  return pt.x >= 0;
+};
 
-  if (points.size() == 0)
-    return result;
-
-  int p = 0;
-  bool found = false;
-  for (int i = 1; i < points.size() && ~found; ++i)
-    if (points[i - 1].x < 0 && points[i].x >= 0)
-    {
-      p = i;
-      found = true;
-    }
-
-  int q = 0;
-  found = false;
-  for (int i = 1; i < points.size() && ~found; ++i)
-    if (points[i - 1].x >= 0 && points[i].x < 0)
-    {
-      q = i;
-      found = true;
-    }
-
-  if (p == q)
-  {
-    if ((*points.begin()).x >= 0)
-      return points;
-    else
-      return result;
-  }
-
-  int i = p;
-  while (i != q)
-  {
-    if (points[i].x < 0)
-    {
-      result.clear();
-      Point nan;
-      nan.x = sqrt(-1);
-      nan.y = sqrt(-1);
-      result.push_back(nan);
-      return result;
-    }
-    result.push_back(points[i]);
-    if (++i >= points.size())
-      i = 0;
-  }
-
-  i = q;
-  while (i != p)
-  {
-    if (points[i].x >= 0)
-    {
-      result.clear();
-      Point nan;
-      nan.x = sqrt(-1);
-      nan.y = sqrt(-1);
-      result.push_back(nan);
-      return result;
-    }
-    if (++i >= points.size())
-      i = 0;
-  }
-
-  return std::move(result);
-}
-#pragma warning (pop)
-
-std::vector<Point> extractRefactored(const std::vector<Point>& points)
+class ExtractNaive
 {
-  std::vector<Point> result;
-
-  if (points.empty())
-    return result;
-
-  auto isRight = [](const Point& pt) { return pt.x >= 0; };
-
-  auto findBoundary = [&](bool rightToLeft)
+public: 
+  #pragma warning (push)
+  #pragma warning (disable : 4804)
+  const std::vector<Point> operator()(const std::vector<Point>& points) const
   {
-    for (int i = 1; i < points.size(); ++i)
-      if (isRight(points[i - 1]) == rightToLeft && 
-          isRight(points[i]) != rightToLeft)
-        return i;
-    return 0;
-  };
+    std::vector<Point> result;
+    result.clear();
 
-  int p = findBoundary(false);
-  int q = findBoundary(true);
+    if (points.size() == 0)
+      return result;
 
-  if (p == q)
-    return isRight(points[0]) ? points : result;
+    int p = 0;
+    bool found = false;
+    for (int i = 1; i < points.size() && ~found; ++i)
+      if (points[i - 1].x < 0 && points[i].x >= 0)
+      {
+        p = i;
+        found = true;
+      }
 
-  auto appendResult = [&](int from, int to, bool shouldBeRight)
-  {
-    int i = from;
-    while (i != to)
+    int q = 0;
+    found = false;
+    for (int i = 1; i < points.size() && ~found; ++i)
+      if (points[i - 1].x >= 0 && points[i].x < 0)
+      {
+        q = i;
+        found = true;
+      }
+
+    if (p == q)
     {
-      if (isRight(points[i]) != shouldBeRight)
-        throw std::runtime_error("Unexpected order");
-      if (shouldBeRight)
-        result.push_back(points[i]);
+      if ((*points.begin()).x >= 0)
+        return points;
+      else
+        return result;
+    }
+
+    int i = p;
+    while (i != q)
+    {
+      if (points[i].x < 0)
+      {
+        result.clear();
+        Point nan;
+        nan.x = sqrt(-1);
+        nan.y = sqrt(-1);
+        result.push_back(nan);
+        return result;
+      }
+      result.push_back(points[i]);
       if (++i >= points.size())
         i = 0;
     }
-  };
 
-  appendResult(p, q, true);
-  appendResult(q, p, false);
+    i = q;
+    while (i != p)
+    {
+      if (points[i].x >= 0)
+      {
+        result.clear();
+        Point nan;
+        nan.x = sqrt(-1);
+        nan.y = sqrt(-1);
+        result.push_back(nan);
+        return result;
+      }
+      if (++i >= points.size())
+        i = 0;
+    }
 
-  return result;
-}
-
-std::vector<Point> extractManual(const std::vector<Point>& points)
-{
-  using PointsIterator = std::vector<Point>::const_iterator;
-
-  auto getLastNegative = [](PointsIterator i, PointsIterator end)
-  {
-    while (i != end && i->x < 0) { ++i; }
-    return i;
-  };
-
-  auto getLastPositive = [](PointsIterator i, PointsIterator end)
-  {
-    while (i != end && i->x >= 0) { ++i; }
-    return i;
-  };
-
-  std::vector<Point> segment;
-  PointsIterator secondStart = points.begin();
-  PointsIterator secondEnd = getLastPositive(secondStart, points.end());
-  PointsIterator firstStart = getLastNegative(secondEnd, points.end());
-  PointsIterator firstEnd = getLastPositive(firstStart, points.end());
-  PointsIterator lastIt = (secondStart == secondEnd) ? getLastNegative(firstEnd, points.end()) : firstEnd;
-
-  if (lastIt != points.end())
-  {
-    throw std::runtime_error("Unexpected order");
+    return std::move(result);
   }
+#pragma warning (pop)
+};
 
-  segment.insert(segment.end(), firstStart, firstEnd);
-  segment.insert(segment.end(), secondStart, secondEnd);
-
-  return segment;
-}
-
-std::vector<Point> extractAlgoBasic(std::vector<Point> points)
+class ExtractRefactored
 {
-  using namespace boost::range;
-  using namespace boost::algorithm;
+public:
+  std::vector<Point> operator()(const std::vector<Point>& points) const
+  {
+    std::vector<Point> result;
 
-  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+    if (points.empty())
+      return result;
 
-  auto middle = adjacent_find(points,
-    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
-  middle = middle != points.end() ? std::next(middle) : points.begin();
+    auto isRight = [](const Point& pt) { return pt.x >= 0; };
 
-  rotate(points, middle);
+    auto findBoundary = [&](bool rightToLeft)
+    {
+      for (int i = 1; i < points.size(); ++i)
+        if (isRight(points[i - 1]) == rightToLeft &&
+            isRight(points[i]) != rightToLeft)
+          return i;
+      return 0;
+    };
 
-  if (!is_partitioned(points, isRight))
-    throw std::runtime_error("Unexpected order");
+    int p = findBoundary(false);
+    int q = findBoundary(true);
 
-  points.erase(partition_point(points, isRight), points.end());
+    if (p == q)
+      return isRight(points[0]) ? points : result;
 
-  return points;
-}
+    auto appendResult = [&](int from, int to, bool shouldBeRight)
+    {
+      int i = from;
+      while (i != to)
+      {
+        if (isRight(points[i]) != shouldBeRight)
+          throw std::runtime_error("Unexpected order");
+        if (shouldBeRight)
+          result.push_back(points[i]);
+        if (++i >= points.size())
+          i = 0;
+      }
+    };
+
+    appendResult(p, q, true);
+    appendResult(q, p, false);
+
+    return result;
+  }
+};
+
+class ExtractManual
+{
+public:
+  std::vector<Point> operator()(const std::vector<Point>& points) const
+  {
+    using PointsIterator = std::vector<Point>::const_iterator;
+
+    auto getLastNegative = [](PointsIterator i, PointsIterator end)
+    {
+      while (i != end && i->x < 0) { ++i; }
+      return i;
+    };
+
+    auto getLastPositive = [](PointsIterator i, PointsIterator end)
+    {
+      while (i != end && i->x >= 0) { ++i; }
+      return i;
+    };
+
+    std::vector<Point> segment;
+    PointsIterator secondStart = points.begin();
+    PointsIterator secondEnd = getLastPositive(secondStart, points.end());
+    PointsIterator firstStart = getLastNegative(secondEnd, points.end());
+    PointsIterator firstEnd = getLastPositive(firstStart, points.end());
+    PointsIterator lastIt = (secondStart == secondEnd) ? getLastNegative(firstEnd, points.end()) : firstEnd;
+
+    if (lastIt != points.end())
+    {
+      throw std::runtime_error("Unexpected order");
+    }
+
+    segment.insert(segment.end(), firstStart, firstEnd);
+    segment.insert(segment.end(), secondStart, secondEnd);
+
+    return segment;
+  }
+};
+
+class ExtractAlgoBasic
+{
+public:
+  std::vector<Point> operator()(std::vector<Point> points) const
+  {
+    using namespace boost::range;
+    using namespace boost::algorithm;
+
+    auto isRight = [](const Point& pt) { return pt.x >= 0; };
+
+    auto middle = adjacent_find(points,
+      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+    middle = middle != points.end() ? std::next(middle) : points.begin();
+
+    rotate(points, middle);
+
+    if (!is_partitioned(points, isRight))
+      throw std::runtime_error("Unexpected order");
+
+    points.erase(partition_point(points, isRight), points.end());
+
+    return points;
+  }
+};
 
 template<class It>
 class WrappingIterator : public boost::iterator_facade<WrappingIterator<It>, 
@@ -274,60 +295,63 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
-auto extractAlgoWrappingIterator(const std::vector<Point>& points)
+class ExtractAlgoWrappingIterator
 {
-  using namespace boost::range;
-  using namespace boost::algorithm;
+public:
+  auto operator()(const std::vector<Point>& points) const
+  {
+    using namespace boost::range;
+    using namespace boost::algorithm;
 
-  auto isRight = [](const Point& pt) { return pt.x >= 0; };
+    auto isRight = [](const Point& pt) { return pt.x >= 0; };
 
-  auto middle = adjacent_find(points,
-    [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
+    auto middle = adjacent_find(points, 
+      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
 
-  middle = middle != points.end() ? std::next(middle) : points.begin();
+    middle = middle != points.end() ? std::next(middle) : points.begin();
 
-  auto begin = makeWrappingIterator(middle, points.begin(), points.end());
-  auto rotated = boost::make_iterator_range(begin, begin + points.size());
+    auto begin = makeWrappingIterator(middle, points.begin(), points.end());
+    auto rotated = boost::make_iterator_range(begin, begin + points.size());
 
-  if (!is_partitioned(rotated, isRight))
-    throw std::runtime_error("Unexpected order");
+    if (!is_partitioned(rotated, isRight))
+      throw std::runtime_error("Unexpected order");
 
-  auto end = partition_point(rotated, isRight);
+    auto end = partition_point(rotated, isRight);
 
-  return boost::make_iterator_range(begin, end);
-}
+    return boost::make_iterator_range(begin, end);
+  }
+};
 
 // gsl::span?
 
-template<class It, class Predicate>
-auto extractAlgoGeneric(It first, It last, Predicate p)
+class ExtractAlgoGeneric
 {
-  using namespace boost::range;
-  using namespace boost::algorithm;
+public:
+  template<class It, class Predicate>
+  auto operator()(It first, It last, Predicate p) const
+  {
+    using namespace boost::range;
+    using namespace boost::algorithm;
 
-  auto middle = adjacent_find(first, last,
-    [&](auto&& a, auto&& b) { return !p(a) && p(b); });
-  middle = middle != last ? std::next(middle) : first;
+    auto middle = adjacent_find(first, last,
+      [&](auto&& a, auto&& b) { return !p(a) && p(b); });
+    middle = middle != last ? std::next(middle) : first;
 
-  auto rotated = boost::join(
-    boost::make_iterator_range(middle, last), 
-    boost::make_iterator_range(first, middle));
+    auto rotated = boost::join(
+      boost::make_iterator_range(middle, last),
+      boost::make_iterator_range(first, middle));
 
-  if (!is_partitioned(rotated, p))
-    throw std::runtime_error("Unexpected order");
+    if (!is_partitioned(rotated, p))
+      throw std::runtime_error("Unexpected order");
 
-  auto end = partition_point(rotated, p);
+    auto end = partition_point(rotated, p);
 
-  return boost::make_iterator_range(rotated.begin(), end);
-}
+    return boost::make_iterator_range(rotated.begin(), end);
+  }
+};
 
 #define EXPECT_TRUE(x) if(!(x)) throw std::runtime_error("test failed")
 #define EXPECT_THROW(x, E) do { try { x; } catch (const E&) { break; } throw std::runtime_error("test failed"); } while (false)
-
-bool isRight(const Point& pt)
-{
-  return pt.x >= 0;
-};
 
 void used()
 {
@@ -360,13 +384,13 @@ void used()
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
-  EXPECT_TRUE(extractNaive(input) == answer);
-  EXPECT_TRUE(extractRefactored(input) == answer);
-  EXPECT_TRUE(extractManual(input) == answer);
-  EXPECT_TRUE(extractAlgoBasic(input) == answer);
-  EXPECT_TRUE(extractAlgoWrappingIterator(input) == answer);
+  EXPECT_TRUE(ExtractNaive()(input) == answer);
+  EXPECT_TRUE(ExtractRefactored()(input) == answer);
+  EXPECT_TRUE(ExtractManual()(input) == answer);
+  EXPECT_TRUE(ExtractAlgoBasic()(input) == answer);
+  EXPECT_TRUE(ExtractAlgoWrappingIterator()(input) == answer);
 
-  EXPECT_TRUE(extractAlgoGeneric(input.begin(), input.end(), isRight) == answer);
+  EXPECT_TRUE(ExtractAlgoGeneric()(input.begin(), input.end(), isRight) == answer);
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -375,7 +399,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = extractAlgoGeneric(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = ExtractAlgoGeneric()(inputList.begin(), inputList.end(), isRight);
   EXPECT_TRUE(outputRange == answer);
 
   Point p{};
@@ -385,15 +409,15 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 
 void checkFailure(const std::vector<Point>& input)
 {
-  auto answer = extractNaive(input);
+  auto answer = ExtractNaive()(input);
   EXPECT_TRUE(answer.size() == 1);
   EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
 
-  EXPECT_THROW(extractRefactored(input), std::runtime_error);
-  EXPECT_THROW(extractManual(input), std::runtime_error);
-  EXPECT_THROW(extractAlgoBasic(input), std::runtime_error);
-  EXPECT_THROW(extractAlgoWrappingIterator(input), std::runtime_error);
-  EXPECT_THROW(extractAlgoGeneric(input.begin(), input.end(), isRight), std::runtime_error);
+  EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
+  EXPECT_THROW(ExtractManual()(input), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoBasic()(input), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoWrappingIterator()(input), std::runtime_error);
+  EXPECT_THROW(ExtractAlgoGeneric()(input.begin(), input.end(), isRight), std::runtime_error);
 }
 
 void testRightLeft()
@@ -474,7 +498,7 @@ void BM_testNaive(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extractNaive(points));
+    benchmark::DoNotOptimize(ExtractNaive()(points));
   }
 }
 BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
@@ -485,7 +509,7 @@ void BM_testManual(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extractManual(points));
+    benchmark::DoNotOptimize(ExtractManual()(points));
   }
 }
 BENCHMARK(BM_testManual)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
@@ -496,7 +520,7 @@ void BM_testAlgoBasic(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(extractAlgoBasic(points));
+    benchmark::DoNotOptimize(ExtractAlgoBasic()(points));
   }
 }
 BENCHMARK(BM_testAlgoBasic)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
@@ -507,7 +531,7 @@ void BM_testAlgoWrappingIterator(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractAlgoWrappingIterator(points)));
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(ExtractAlgoWrappingIterator()(points)));
   }
 }
 BENCHMARK(BM_testAlgoWrappingIterator)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
@@ -518,7 +542,7 @@ void BM_testAlgoGeneric(benchmark::State& state)
 
   for (auto _ : state)
   {
-    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractAlgoGeneric(points.begin(), points.end(), isRight)));
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(ExtractAlgoGeneric()(points.begin(), points.end(), isRight)));
   }
 }
 BENCHMARK(BM_testAlgoGeneric)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
