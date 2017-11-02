@@ -1,0 +1,5 @@
+[requires]
+google-benchmark/1.2.0@mmatrosov/testing
+
+[generators]
+visual_studio

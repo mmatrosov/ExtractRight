@@ -2,8 +2,7 @@
 #include <boost/range/join.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
-#include <boost/iterator/iterator_adaptor.hpp>
-#include <boost/timer/timer.hpp>
+#include <benchmark/benchmark.h>
 
 #include <iostream>
 #include <vector>
@@ -29,6 +28,8 @@ inline bool operator!=(const Point& a, const Point& b)
   return !(a == b);
 }
 
+#pragma warning (push)
+#pragma warning (disable : 4804)
 const std::vector<Point> extract(const std::vector<Point>& points)
 {
   std::vector<Point> result;
@@ -98,6 +99,7 @@ const std::vector<Point> extract(const std::vector<Point>& points)
 
   return std::move(result);
 }
+#pragma warning (pop)
 
 std::vector<Point> extractRefactored(const std::vector<Point>& points)
 {
@@ -462,38 +464,58 @@ void traverseRange(T&& range)
   g_accum += sum;
 }
 
-void testPerformance()
+std::vector<Point> getTestArray()
 {
-  std::cout << "Profiling..." << std::endl;
-
-  static const int count = 100'000'000;
+  static const int count = 10'000'000;
   std::vector<Point> points(count, { -1, 1 });
   std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
-  std::fill_n(points.rbegin(), count / 4, Point { 1, 1 });
+  std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
+  return points;
+}
 
-  auto r1 = extractRight(points);
-  auto r2 = extractRightRange(points);
-  auto r3 = extractIf(points.begin(), points.end(), isRight);
+static const double minTimeSeconds = 1.0;
 
-  for (int i = 0; i < 3; ++i)
+void BM_testVector(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
   {
-    std::cout << "Trial " << i << "..." << std::endl;
-    {
-      boost::timer::auto_cpu_timer timer("%w seconds for vector\n");
-      traverseRange(r1);
-    }
-    {
-      boost::timer::auto_cpu_timer timer("%w seconds for WrappingIterator\n");
-      traverseRange(r2);
-    }
-    {
-      boost::timer::auto_cpu_timer timer("%w seconds for joined iterator\n");
-      traverseRange(r3);
-    }
+    auto r = extractRight(points);
+    traverseRange(r);
   }
 
-  std::cout << "Accumulated: " << g_accum << std::endl;
+  std::cout << g_accum << std::endl;
 }
+BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+
+void BM_testWrappingIterator(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
+  {
+    auto r = extractRightRange(points);
+    traverseRange(r);
+  }
+
+  std::cout << g_accum << std::endl;
+}
+BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+
+void BM_testGeneric(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
+  {
+    auto r = extractIf(points.begin(), points.end(), isRight);
+    traverseRange(r);
+  }
+
+  std::cout << g_accum << std::endl;
+}
+BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
 
 int main(int argc, char* argv[])
 {
@@ -517,7 +539,8 @@ int main(int argc, char* argv[])
 
   std::cout << "Success." << std::endl;
 
-  testPerformance();
+  benchmark::Initialize(&argc, argv);
+  benchmark::RunSpecifiedBenchmarks();
 
   return EXIT_SUCCESS;
 }

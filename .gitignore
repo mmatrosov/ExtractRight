@@ -7,3 +7,6 @@
 /.vs/
 /_ReSharper.Caches/
 x64/
+/conanbuildinfo.props
+/conanbuildinfo.txt
+/conaninfo.txt
