@@ -475,6 +475,30 @@ std::vector<Point> getTestArray()
 
 static const double minTimeSeconds = 2.0;
 
+void BM_testNaive(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
+  {
+    auto r = extract(points);
+    traverseRange(r);
+  }
+}
+BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+
+void BM_testMirrada(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
+  {
+    auto r = extractMirrada(points);
+    traverseRange(r);
+  }
+}
+BENCHMARK(BM_testMirrada)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+
 void BM_testVector(benchmark::State& state)
 {
   const auto points = getTestArray();
