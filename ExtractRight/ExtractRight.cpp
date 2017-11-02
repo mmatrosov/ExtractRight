@@ -2,7 +2,11 @@
 #include <boost/range/join.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
 #include <boost/algorithm/cxx11/partition_point.hpp>
+
+#pragma warning (push)
+#pragma warning (disable : 4141)
 #include <benchmark/benchmark.h>
+#pragma warning (pop)
 
 #include <iostream>
 #include <vector>
@@ -462,7 +466,7 @@ std::vector<Point> getTestArray()
   return points;
 }
 
-static const double minTimeSeconds = 1.0;
+constexpr int numIterations = 3;
 
 void BM_testNaive(benchmark::State& state)
 {
@@ -473,7 +477,7 @@ void BM_testNaive(benchmark::State& state)
     benchmark::DoNotOptimize(extract(points));
   }
 }
-BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 void BM_testMirrada(benchmark::State& state)
 {
@@ -484,7 +488,7 @@ void BM_testMirrada(benchmark::State& state)
     benchmark::DoNotOptimize(extractMirrada(points));
   }
 }
-BENCHMARK(BM_testMirrada)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+BENCHMARK(BM_testMirrada)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 void BM_testVector(benchmark::State& state)
 {
@@ -495,7 +499,7 @@ void BM_testVector(benchmark::State& state)
     benchmark::DoNotOptimize(extractRight(points));
   }
 }
-BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 void BM_testWrappingIterator(benchmark::State& state)
 {
@@ -506,7 +510,7 @@ void BM_testWrappingIterator(benchmark::State& state)
     benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractRightRange(points)));
   }
 }
-BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 void BM_testGeneric(benchmark::State& state)
 {
@@ -517,7 +521,7 @@ void BM_testGeneric(benchmark::State& state)
     benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractIf(points.begin(), points.end(), isRight)));
   }
 }
-BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
+BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->Iterations(numIterations);
 
 int main(int argc, char* argv[])
 {
