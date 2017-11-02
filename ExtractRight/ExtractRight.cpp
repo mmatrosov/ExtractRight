@@ -451,8 +451,6 @@ void testIncorrect2()
   { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
-Point::T g_accum;
-
 template<class T>
 void traverseRange(T&& range)
 {
@@ -461,7 +459,7 @@ void traverseRange(T&& range)
   for (int i = 0; i < trials; ++i)
     for (const Point& v : range)
       sum += v.x;
-  g_accum += sum;
+  benchmark::DoNotOptimize(sum);
 }
 
 std::vector<Point> getTestArray()
@@ -473,7 +471,7 @@ std::vector<Point> getTestArray()
   return points;
 }
 
-static const double minTimeSeconds = 1.0;
+static const double minTimeSeconds = 2.0;
 
 void BM_testVector(benchmark::State& state)
 {
@@ -484,8 +482,6 @@ void BM_testVector(benchmark::State& state)
     auto r = extractRight(points);
     traverseRange(r);
   }
-
-  std::cout << g_accum << std::endl;
 }
 BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
 
@@ -498,8 +494,6 @@ void BM_testWrappingIterator(benchmark::State& state)
     auto r = extractRightRange(points);
     traverseRange(r);
   }
-
-  std::cout << g_accum << std::endl;
 }
 BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
 
@@ -512,8 +506,6 @@ void BM_testGeneric(benchmark::State& state)
     auto r = extractIf(points.begin(), points.end(), isRight);
     traverseRange(r);
   }
-
-  std::cout << g_accum << std::endl;
 }
 BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
 
