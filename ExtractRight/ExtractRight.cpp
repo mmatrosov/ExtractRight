@@ -167,36 +167,33 @@ class ExtractManual
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
   {
-    using PointsIterator = std::vector<Point>::const_iterator;
+    using It = std::vector<Point>::const_iterator;
 
-    auto getLastNegative = [](PointsIterator i, PointsIterator end)
+    auto findLastLeft = [](It i, It end)
     {
       while (i != end && i->x < 0) { ++i; }
       return i;
     };
-
-    auto getLastPositive = [](PointsIterator i, PointsIterator end)
+    auto findLastRight = [](It i, It end)
     {
       while (i != end && i->x >= 0) { ++i; }
       return i;
     };
 
-    std::vector<Point> segment;
-    PointsIterator secondStart = points.begin();
-    PointsIterator secondEnd = getLastPositive(secondStart, points.end());
-    PointsIterator firstStart = getLastNegative(secondEnd, points.end());
-    PointsIterator firstEnd = getLastPositive(firstStart, points.end());
-    PointsIterator lastIt = (secondStart == secondEnd) ? getLastNegative(firstEnd, points.end()) : firstEnd;
+    It begin1 = points.begin();
+    It end1 = findLastRight(begin1, points.end());
+    It begin2 = findLastLeft(end1, points.end());
+    It end2 = findLastRight(begin2, points.end());
+    It endPts = begin1 == end1 ? findLastLeft(end2, points.end()) : end2;
 
-    if (lastIt != points.end())
-    {
+    if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
-    }
 
-    segment.insert(segment.end(), firstStart, firstEnd);
-    segment.insert(segment.end(), secondStart, secondEnd);
+    std::vector<Point> result;
+    result.insert(result.end(), begin2, end2);
+    result.insert(result.end(), begin1, end1);
 
-    return segment;
+    return result;
   }
 };
 
