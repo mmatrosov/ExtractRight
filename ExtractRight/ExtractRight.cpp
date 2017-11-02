@@ -529,7 +529,7 @@ void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
 }
 
 template<class T>
-void benchmarkExtractCopy(benchmark::State& state)
+void extractCopy(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -538,12 +538,12 @@ void benchmarkExtractCopy(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractManual)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(benchmarkExtractCopy, ExtractAlgoBasicCopy)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractCopy, ExtractManual)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractCopy, ExtractAlgoBasicCopy)->Apply(setupExtractBenchmark);
 
 template<class T>
-void benchmarkExtractInplace(benchmark::State& state)
+void extractInplace(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -556,10 +556,10 @@ void benchmarkExtractInplace(benchmark::State& state)
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(benchmarkExtractInplace, ExtractAlgoInplace)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractInplace, ExtractAlgoInplace)->Apply(setupExtractBenchmark);
 
 template<class T>
-void benchmarkExtractView(benchmark::State& state)
+void extractView(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -568,8 +568,8 @@ void benchmarkExtractView(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(benchmarkExtractView, ExtractAlgoGeneric)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(benchmarkExtractView, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractView, ExtractAlgoGeneric)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractView, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
@@ -577,7 +577,7 @@ void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 }
 
 template<class T>
-void benchmarkTraverse(benchmark::State& state)
+void traverse(benchmark::State& state)
 {
   using namespace boost::range;
 
@@ -591,9 +591,9 @@ void benchmarkTraverse(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoBasicCopy)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoWrappingIterator)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(benchmarkTraverse, ExtractAlgoGeneric)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractAlgoBasicCopy)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractAlgoWrappingIterator)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractAlgoGeneric)->Apply(setupTraverseBenchmark);
 
 int main(int argc, char* argv[])
 {
