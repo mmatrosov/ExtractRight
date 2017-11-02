@@ -525,7 +525,7 @@ std::vector<Point> getTestArray()
 
 void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMillisecond)->Iterations(3);
+  benchmark->Unit(benchmark::kMillisecond);
 }
 
 template<class T>
@@ -568,12 +568,12 @@ void benchmarkExtractView(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(benchmarkExtractView, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(benchmarkExtractView, ExtractAlgoGeneric)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(benchmarkExtractView, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMillisecond)->Iterations(20);
+  benchmark->Unit(benchmark::kMillisecond);
 }
 
 template<class T>
