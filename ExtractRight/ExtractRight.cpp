@@ -453,27 +453,16 @@ void testIncorrect2()
   { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
-template<class T>
-void traverseRange(T&& range)
-{
-  static const int trials = 20;
-  Point::T sum = 0;
-  for (int i = 0; i < trials; ++i)
-    for (const Point& v : range)
-      sum += v.x;
-  benchmark::DoNotOptimize(sum);
-}
-
 std::vector<Point> getTestArray()
 {
-  static const int count = 10'000'000;
+  static const int count = 50'000'000;
   std::vector<Point> points(count, { -1, 1 });
   std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
   std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
   return points;
 }
 
-static const double minTimeSeconds = 2.0;
+static const double minTimeSeconds = 1.0;
 
 void BM_testNaive(benchmark::State& state)
 {
@@ -481,8 +470,7 @@ void BM_testNaive(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto r = extract(points);
-    traverseRange(r);
+    benchmark::DoNotOptimize(extract(points));
   }
 }
 BENCHMARK(BM_testNaive)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
@@ -493,8 +481,7 @@ void BM_testMirrada(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto r = extractMirrada(points);
-    traverseRange(r);
+    benchmark::DoNotOptimize(extractMirrada(points));
   }
 }
 BENCHMARK(BM_testMirrada)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
@@ -505,8 +492,7 @@ void BM_testVector(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto r = extractRight(points);
-    traverseRange(r);
+    benchmark::DoNotOptimize(extractRight(points));
   }
 }
 BENCHMARK(BM_testVector)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
@@ -517,8 +503,7 @@ void BM_testWrappingIterator(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto r = extractRightRange(points);
-    traverseRange(r);
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractRightRange(points)));
   }
 }
 BENCHMARK(BM_testWrappingIterator)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
@@ -529,8 +514,7 @@ void BM_testGeneric(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto r = extractIf(points.begin(), points.end(), isRight);
-    traverseRange(r);
+    benchmark::DoNotOptimize(boost::copy_range<std::vector<Point>>(extractIf(points.begin(), points.end(), isRight)));
   }
 }
 BENCHMARK(BM_testGeneric)->Unit(benchmark::kMillisecond)->MinTime(minTimeSeconds);
