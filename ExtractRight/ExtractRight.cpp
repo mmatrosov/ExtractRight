@@ -183,6 +183,25 @@ public:
   }
 };
 
+class ExtractView
+{
+public:
+  auto operator()(const std::vector<Point>& points) const
+  {
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
+      throw std::runtime_error("Unexpected order");
+
+    return boost::join(
+      boost::make_iterator_range(begin2, end2),
+      boost::make_iterator_range(begin1, end1));
+  }
+};
+
 class ExtractViewGeneric
 {
 public:
@@ -358,6 +377,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(ExtractRefactored()(input) == answer);
   EXPECT_TRUE(ExtractCopyReference()(input) == answer);
   EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
+  EXPECT_TRUE(ExtractView()(input) == answer);
   EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
 
   auto temp = input;
@@ -389,6 +409,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
   EXPECT_THROW(ExtractCopyReference()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
+  EXPECT_THROW(ExtractView()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
 
   auto temp = input;
@@ -493,6 +514,7 @@ void extractView(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
+BENCHMARK_TEMPLATE(extractView, ExtractView)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(extractView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(extractView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
 
