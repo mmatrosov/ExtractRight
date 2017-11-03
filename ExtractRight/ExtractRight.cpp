@@ -187,29 +187,6 @@ public:
   }
 };
 
-class ExtractCopyRotate
-{
-public:
-  std::vector<Point> operator()(const std::vector<Point>& points) const
-  {
-    auto isRight = [](const Point& pt) { return pt.x >= 0; };
-
-    auto middle = adjacent_find(points,
-      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
-    middle = middle != points.end() ? std::next(middle) : points.begin();
-
-    std::vector<Point> result(points.size());
-    rotate_copy(points, middle, result.begin());
-
-    if (!is_partitioned(result, isRight))
-      throw std::runtime_error("Unexpected order");
-
-    result.erase(partition_point(result, isRight), result.end());
-
-    return result;
-  }
-};
-
 class ExtractInplace
 {
 public:
@@ -388,7 +365,6 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(ExtractNaive()(input) == answer);
   EXPECT_TRUE(ExtractRefactored()(input) == answer);
   EXPECT_TRUE(ExtractCopyReference()(input) == answer);
-  EXPECT_TRUE(ExtractCopyRotate()(input) == answer);
   EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
   EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
 
@@ -420,7 +396,6 @@ void checkFailure(const std::vector<Point>& input)
 
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
   EXPECT_THROW(ExtractCopyReference()(input), std::runtime_error);
-  EXPECT_THROW(ExtractCopyRotate()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
 
@@ -515,7 +490,6 @@ void extractCopy(benchmark::State& state)
 }
 BENCHMARK_TEMPLATE(extractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(extractCopy, ExtractCopyReference)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractCopy, ExtractCopyRotate)->Apply(setupExtractBenchmark);
 
 template<class T>
 void extractInplace(benchmark::State& state)
@@ -564,7 +538,7 @@ void traverse(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(traverse, ExtractCopyRotate)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractCopyReference)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
 
