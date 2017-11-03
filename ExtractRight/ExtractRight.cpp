@@ -162,7 +162,7 @@ public:
   }
 };
 
-class ExtractCopyReference
+class ExtractCopy
 {
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
@@ -239,7 +239,7 @@ public:
   WrappingIterator(It it, It begin, It end) : 
     m_begin(begin), m_size(end - begin), m_offset(it - begin) {}
 
-  template <class OtherIt>
+  template<class OtherIt>
   WrappingIterator(const WrappingIterator<OtherIt>& other) :
     m_begin(other.m_begin), m_size(other.m_size), m_offset(other.m_offset) {}
 
@@ -376,7 +376,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 {
   EXPECT_TRUE(ExtractNaive()(input) == answer);
   EXPECT_TRUE(ExtractRefactored()(input) == answer);
-  EXPECT_TRUE(ExtractCopyReference()(input) == answer);
+  EXPECT_TRUE(ExtractCopy()(input) == answer);
   EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
   EXPECT_TRUE(ExtractView()(input) == answer);
   EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
@@ -408,7 +408,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_TRUE(answer.front().x < 0 && answer.front().y < 0);
 
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
-  EXPECT_THROW(ExtractCopyReference()(input), std::runtime_error);
+  EXPECT_THROW(ExtractCopy()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
   EXPECT_THROW(ExtractView()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
@@ -493,7 +493,7 @@ void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
 }
 
 template<class T>
-void extractCopy(benchmark::State& state)
+void testCopy(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -502,11 +502,11 @@ void extractCopy(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(extractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractCopy, ExtractCopyReference)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testCopy, ExtractNaive)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testCopy, ExtractCopy)->Apply(setupExtractBenchmark);
 
 template<class T>
-void extractView(benchmark::State& state)
+void testView(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -515,12 +515,12 @@ void extractView(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(extractView, ExtractView)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testView, ExtractView)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
 
 template<class T>
-void extractInplace(benchmark::State& state)
+void testInplace(benchmark::State& state)
 {
   const auto points = getTestArray();
 
@@ -533,7 +533,7 @@ void extractInplace(benchmark::State& state)
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(extractInplace, ExtractInplace)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testInplace, ExtractInplace)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
@@ -553,7 +553,7 @@ void traverse(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(traverse, ExtractCopyReference)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractCopy)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
 
