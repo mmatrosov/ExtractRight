@@ -301,11 +301,6 @@ public:
 class ExtractViewGeneric
 {
 public:
-  auto operator()(const std::vector<Point>& points) const
-  {
-    return operator()(points.begin(), points.end(), isRight);
-  }
-
   template<class It, class Predicate>
   auto operator()(It first, It last, Predicate p) const
   {
@@ -320,6 +315,11 @@ public:
     return boost::join(
       boost::make_iterator_range(begin2, end2),
       boost::make_iterator_range(begin1, end1));
+  }
+
+  auto operator()(const std::vector<Point>& points) const
+  {
+    return operator()(points.begin(), points.end(), isRight);
   }
 };
 
