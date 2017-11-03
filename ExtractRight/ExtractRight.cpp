@@ -215,18 +215,19 @@ class ExtractInplace
 public:
   void operator()(std::vector<Point>& points) const
   {
-    auto isRight = [](const Point& pt) { return pt.x >= 0; };
+    auto begin1 = points.begin();
+    auto end1 = find_if_not(begin1, points.end(), isRight);
+    auto begin2 = find_if(end1, points.end(), isRight);
+    auto end2 = find_if_not(begin2, points.end(), isRight);
+    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
 
-    auto middle = adjacent_find(points,
-      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
-    middle = middle != points.end() ? std::next(middle) : points.begin();
-
-    rotate(points, middle);
-
-    if (!is_partitioned(points, isRight))
+    if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
 
-    points.erase(partition_point(points, isRight), points.end());
+    rotate(points, begin2);
+
+    size_t count = end1 - begin1 + end2 - begin2;
+    points.erase(points.begin() + count, points.end());
   }
 };
 
@@ -305,22 +306,20 @@ class ExtractViewWrappingIterator
 public:
   auto operator()(const std::vector<Point>& points) const
   {
-    auto isRight = [](const Point& pt) { return pt.x >= 0; };
+    auto begin1 = points.begin();
+    auto end1 = find_if_not(begin1, points.end(), isRight);
+    auto begin2 = find_if(end1, points.end(), isRight);
+    auto end2 = find_if_not(begin2, points.end(), isRight);
+    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
 
-    auto middle = adjacent_find(points, 
-      [&](auto&& pt1, auto&& pt2) { return !isRight(pt1) && isRight(pt2); });
-
-    middle = middle != points.end() ? std::next(middle) : points.begin();
-
-    auto begin = makeWrappingIterator(middle, points.begin(), points.end());
-    auto rotated = boost::make_iterator_range(begin, begin + points.size());
-
-    if (!is_partitioned(rotated, isRight))
+    if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
 
-    auto end = partition_point(rotated, isRight);
+    size_t count = end1 - begin1 + end2 - begin2;
 
-    return boost::make_iterator_range(begin, end);
+    auto begin = makeWrappingIterator(begin2, points.begin(), points.end());
+
+    return boost::make_iterator_range(begin, begin + count);
   }
 };
 
@@ -337,20 +336,18 @@ public:
   template<class It, class Predicate>
   auto operator()(It first, It last, Predicate p) const
   {
-    auto middle = adjacent_find(first, last,
-      [&](auto&& a, auto&& b) { return !p(a) && p(b); });
-    middle = middle != last ? std::next(middle) : first;
+    It begin1 = first;
+    It end1 = find_if_not(begin1, last, p);
+    It begin2 = find_if(end1, last, p);
+    It end2 = find_if_not(begin2, last, p);
+    It endPts = begin1 == end1 ? find_if(end2, last, p) : end2;
 
-    auto rotated = boost::join(
-      boost::make_iterator_range(middle, last),
-      boost::make_iterator_range(first, middle));
-
-    if (!is_partitioned(rotated, p))
+    if (endPts != last)
       throw std::runtime_error("Unexpected order");
 
-    auto end = partition_point(rotated, p);
-
-    return boost::make_iterator_range(rotated.begin(), end);
+    return boost::join(
+      boost::make_iterator_range(begin2, end2),
+      boost::make_iterator_range(begin1, end1));
   }
 };
 
