@@ -494,7 +494,7 @@ void testIncorrect2()
 
 std::vector<Point> getTestArray()
 {
-  static const int count = 100'000'000;
+  static const int count = 1'000'000;
   std::vector<Point> points(count, { -1, 1 });
   std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
   std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
@@ -503,7 +503,7 @@ std::vector<Point> getTestArray()
 
 void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMillisecond);
+  benchmark->Unit(benchmark::kMicrosecond);
 }
 
 template<class T>
@@ -551,7 +551,7 @@ BENCHMARK_TEMPLATE(extractView, ExtractAlgoWrappingIterator)->Apply(setupExtract
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMillisecond);
+  benchmark->Unit(benchmark::kMicrosecond);
 }
 
 template<class T>
