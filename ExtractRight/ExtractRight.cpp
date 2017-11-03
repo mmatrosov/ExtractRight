@@ -165,7 +165,7 @@ public:
   }
 };
 
-class ExtractManual
+class ExtractCopyReference
 {
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
@@ -187,7 +187,7 @@ public:
   }
 };
 
-class ExtractAlgoBasicCopy
+class ExtractCopyRotate
 {
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
@@ -210,7 +210,7 @@ public:
   }
 };
 
-class ExtractAlgoInplace
+class ExtractInplace
 {
 public:
   void operator()(std::vector<Point>& points) const
@@ -300,7 +300,7 @@ auto makeWrappingIterator(It it, It begin, It end)
   return WrappingIterator<It>(it, begin, end);
 }
 
-class ExtractAlgoWrappingIterator
+class ExtractViewWrappingIterator
 {
 public:
   auto operator()(const std::vector<Point>& points) const
@@ -326,7 +326,7 @@ public:
 
 // gsl::span?
 
-class ExtractAlgoGeneric
+class ExtractViewGeneric
 {
 public:
   auto operator()(const std::vector<Point>& points) const
@@ -390,13 +390,13 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 {
   EXPECT_TRUE(ExtractNaive()(input) == answer);
   EXPECT_TRUE(ExtractRefactored()(input) == answer);
-  EXPECT_TRUE(ExtractManual()(input) == answer);
-  EXPECT_TRUE(ExtractAlgoBasicCopy()(input) == answer);
-  EXPECT_TRUE(ExtractAlgoWrappingIterator()(input) == answer);
-  EXPECT_TRUE(ExtractAlgoGeneric()(input) == answer);
+  EXPECT_TRUE(ExtractCopyReference()(input) == answer);
+  EXPECT_TRUE(ExtractCopyRotate()(input) == answer);
+  EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
+  EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
 
   auto temp = input;
-  ExtractAlgoInplace()(temp);
+  ExtractInplace()(temp);
   EXPECT_TRUE(temp == answer);
 
 
@@ -407,7 +407,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = ExtractAlgoGeneric()(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = ExtractViewGeneric()(inputList.begin(), inputList.end(), isRight);
   EXPECT_TRUE(outputRange == answer);
 
   Point p{};
@@ -422,13 +422,13 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_TRUE(answer.front().x < 0 && answer.front().y < 0);
 
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
-  EXPECT_THROW(ExtractManual()(input), std::runtime_error);
-  EXPECT_THROW(ExtractAlgoBasicCopy()(input), std::runtime_error);
-  EXPECT_THROW(ExtractAlgoWrappingIterator()(input), std::runtime_error);
-  EXPECT_THROW(ExtractAlgoGeneric()(input), std::runtime_error);
+  EXPECT_THROW(ExtractCopyReference()(input), std::runtime_error);
+  EXPECT_THROW(ExtractCopyRotate()(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
 
   auto temp = input;
-  EXPECT_THROW(ExtractAlgoInplace()(temp), std::runtime_error);
+  EXPECT_THROW(ExtractInplace()(temp), std::runtime_error);
 }
 
 void testRightLeft()
@@ -517,8 +517,8 @@ void extractCopy(benchmark::State& state)
   }
 }
 BENCHMARK_TEMPLATE(extractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractCopy, ExtractManual)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractCopy, ExtractAlgoBasicCopy)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractCopy, ExtractCopyReference)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractCopy, ExtractCopyRotate)->Apply(setupExtractBenchmark);
 
 template<class T>
 void extractInplace(benchmark::State& state)
@@ -534,7 +534,7 @@ void extractInplace(benchmark::State& state)
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(extractInplace, ExtractAlgoInplace)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractInplace, ExtractInplace)->Apply(setupExtractBenchmark);
 
 template<class T>
 void extractView(benchmark::State& state)
@@ -546,8 +546,8 @@ void extractView(benchmark::State& state)
     benchmark::DoNotOptimize(T()(points));
   }
 }
-BENCHMARK_TEMPLATE(extractView, ExtractAlgoGeneric)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractView, ExtractAlgoWrappingIterator)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
@@ -567,9 +567,9 @@ void traverse(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(traverse, ExtractAlgoBasicCopy)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractAlgoWrappingIterator)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractAlgoGeneric)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractCopyRotate)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
 
 int main(int argc, char* argv[])
 {
