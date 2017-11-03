@@ -183,24 +183,28 @@ public:
   }
 };
 
-class ExtractInplace
+class ExtractViewGeneric
 {
 public:
-  void operator()(std::vector<Point>& points) const
+  template<class It, class Predicate>
+  auto operator()(It first, It last, Predicate p) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    It begin1 = std::find_if    (first,  last, p);
+    It end1   = std::find_if_not(begin1, last, p);
+    It begin2 = std::find_if    (end1,   last, p);
+    It end2   = std::find_if_not(begin2, last, p);
 
-    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
+    if (!(begin2 == end2 || begin1 == first && end2 == last))
       throw std::runtime_error("Unexpected order");
 
-    auto middle = begin2 == end2 ? begin1 : begin2;
-    std::rotate(points.begin(), middle, points.end());
+    return boost::join(
+      boost::make_iterator_range(begin2, end2),
+      boost::make_iterator_range(begin1, end1));
+  }
 
-    size_t count = end1 - begin1 + end2 - begin2;
-    points.erase(points.begin() + count, points.end());
+  auto operator()(const std::vector<Point>& points) const
+  {
+    return operator()(points.begin(), points.end(), isRight);
   }
 };
 
@@ -295,30 +299,24 @@ public:
   }
 };
 
-// gsl::span?
-
-class ExtractViewGeneric
+class ExtractInplace
 {
 public:
-  template<class It, class Predicate>
-  auto operator()(It first, It last, Predicate p) const
+  void operator()(std::vector<Point>& points) const
   {
-    It begin1 = std::find_if    (first,  last, p);
-    It end1   = std::find_if_not(begin1, last, p);
-    It begin2 = std::find_if    (end1,   last, p);
-    It end2   = std::find_if_not(begin2, last, p);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
 
-    if (!(begin2 == end2 || begin1 == first && end2 == last))
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    return boost::join(
-      boost::make_iterator_range(begin2, end2),
-      boost::make_iterator_range(begin1, end1));
-  }
+    auto middle = begin2 == end2 ? begin1 : begin2;
+    std::rotate(points.begin(), middle, points.end());
 
-  auto operator()(const std::vector<Point>& points) const
-  {
-    return operator()(points.begin(), points.end(), isRight);
+    size_t count = end1 - begin1 + end2 - begin2;
+    points.erase(points.begin() + count, points.end());
   }
 };
 
@@ -486,6 +484,19 @@ BENCHMARK_TEMPLATE(extractCopy, ExtractNaive)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(extractCopy, ExtractCopyReference)->Apply(setupExtractBenchmark);
 
 template<class T>
+void extractView(benchmark::State& state)
+{
+  const auto points = getTestArray();
+
+  for (auto _ : state)
+  {
+    benchmark::DoNotOptimize(T()(points));
+  }
+}
+BENCHMARK_TEMPLATE(extractView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(extractView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
+
+template<class T>
 void extractInplace(benchmark::State& state)
 {
   const auto points = getTestArray();
@@ -500,19 +511,6 @@ void extractInplace(benchmark::State& state)
   }
 }
 BENCHMARK_TEMPLATE(extractInplace, ExtractInplace)->Apply(setupExtractBenchmark);
-
-template<class T>
-void extractView(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(T()(points));
-  }
-}
-BENCHMARK_TEMPLATE(extractView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(extractView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
@@ -533,8 +531,8 @@ void traverse(benchmark::State& state)
   }
 }
 BENCHMARK_TEMPLATE(traverse, ExtractCopyReference)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
 
 int main(int argc, char* argv[])
 {
