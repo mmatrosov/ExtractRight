@@ -188,16 +188,16 @@ class ExtractInplace
 public:
   void operator()(std::vector<Point>& points) const
   {
-    auto begin1 = points.begin();
-    auto end1 = find_if_not(begin1, points.end(), isRight);
-    auto begin2 = find_if(end1, points.end(), isRight);
-    auto end2 = find_if_not(begin2, points.end(), isRight);
-    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
 
-    if (endPts != points.end())
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    std::rotate(points.begin(), begin2, points.end());
+    auto middle = begin2 == end2 ? begin1 : begin2;
+    std::rotate(points.begin(), middle, points.end());
 
     size_t count = end1 - begin1 + end2 - begin2;
     points.erase(points.begin() + count, points.end());
@@ -279,20 +279,19 @@ class ExtractViewWrappingIterator
 public:
   auto operator()(const std::vector<Point>& points) const
   {
-    auto begin1 = points.begin();
-    auto end1 = find_if_not(begin1, points.end(), isRight);
-    auto begin2 = find_if(end1, points.end(), isRight);
-    auto end2 = find_if_not(begin2, points.end(), isRight);
-    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
 
-    if (endPts != points.end())
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
+    auto middle = begin2 == end2 ? begin1 : begin2;
+    auto beginRes = makeWrappingIterator(middle, points.begin(), points.end());
+
     size_t count = end1 - begin1 + end2 - begin2;
-
-    auto begin = makeWrappingIterator(begin2, points.begin(), points.end());
-
-    return boost::make_iterator_range(begin, begin + count);
+    return boost::make_iterator_range(beginRes, beginRes + count);
   }
 };
 
