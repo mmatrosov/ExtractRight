@@ -176,6 +176,7 @@ public:
       throw std::runtime_error("Unexpected order");
 
     std::vector<Point> result;
+    result.reserve(end1 - begin1 + end2 - begin2);
     result.insert(result.end(), begin2, end2);
     result.insert(result.end(), begin1, end1);
 
