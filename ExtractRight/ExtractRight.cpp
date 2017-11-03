@@ -12,9 +12,6 @@
 #include <vector>
 #include <list>
 
-using namespace boost::range;
-using namespace boost::algorithm;
-
 struct Point
 {
   using T = int;
@@ -170,13 +167,12 @@ class ExtractCopyReference
 public:
   std::vector<Point> operator()(const std::vector<Point>& points) const
   {
-    auto begin1 = points.begin();
-    auto end1 = find_if_not(begin1, points.end(), isRight);
-    auto begin2 = find_if(end1, points.end(), isRight);
-    auto end2 = find_if_not(begin2, points.end(), isRight);
-    auto endPts = begin1 == end1 ? find_if(end2, points.end(), isRight) : end2;
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
 
-    if (endPts != points.end())
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
     std::vector<Point> result;
@@ -201,7 +197,7 @@ public:
     if (endPts != points.end())
       throw std::runtime_error("Unexpected order");
 
-    rotate(points, begin2);
+    std::rotate(points.begin(), begin2, points.end());
 
     size_t count = end1 - begin1 + end2 - begin2;
     points.erase(points.begin() + count, points.end());
@@ -313,13 +309,12 @@ public:
   template<class It, class Predicate>
   auto operator()(It first, It last, Predicate p) const
   {
-    It begin1 = first;
-    It end1 = find_if_not(begin1, last, p);
-    It begin2 = find_if(end1, last, p);
-    It end2 = find_if_not(begin2, last, p);
-    It endPts = begin1 == end1 ? find_if(end2, last, p) : end2;
+    It begin1 = std::find_if    (first,  last, p);
+    It end1   = std::find_if_not(begin1, last, p);
+    It begin2 = std::find_if    (end1,   last, p);
+    It end2   = std::find_if_not(begin2, last, p);
 
-    if (endPts != last)
+    if (!(begin2 == end2 || begin1 == first && end2 == last))
       throw std::runtime_error("Unexpected order");
 
     return boost::join(
@@ -534,7 +529,7 @@ void traverse(benchmark::State& state)
 
   for (auto _ : state)
   {
-    copy(range, result.begin());
+    boost::range::copy(range, result.begin());
     benchmark::DoNotOptimize(result);
   }
 }
