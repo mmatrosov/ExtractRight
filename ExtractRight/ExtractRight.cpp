@@ -17,7 +17,7 @@ using namespace boost::algorithm;
 
 struct Point
 {
-  using T = double;
+  using T = int;
 
   T x;
   T y;
@@ -85,10 +85,10 @@ public:
       if (points[i].x < 0)
       {
         result.clear();
-        Point nan;
-        nan.x = sqrt(-1);
-        nan.y = sqrt(-1);
-        result.push_back(nan);
+        Point left;
+        left.x = -1;
+        left.y = -1;
+        result.push_back(left);
         return result;
       }
       result.push_back(points[i]);
@@ -102,10 +102,10 @@ public:
       if (points[i].x >= 0)
       {
         result.clear();
-        Point nan;
-        nan.x = sqrt(-1);
-        nan.y = sqrt(-1);
-        result.push_back(nan);
+        Point left;
+        left.x = -1;
+        left.y = -1;
+        result.push_back(left);
         return result;
       }
       if (++i >= points.size())
@@ -419,7 +419,7 @@ void checkFailure(const std::vector<Point>& input)
 {
   auto answer = ExtractNaive()(input);
   EXPECT_TRUE(answer.size() == 1);
-  EXPECT_TRUE(std::isnan(answer.front().x) && std::isnan(answer.front().y));
+  EXPECT_TRUE(answer.front().x < 0 && answer.front().y < 0);
 
   EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
   EXPECT_THROW(ExtractManual()(input), std::runtime_error);
@@ -494,7 +494,7 @@ void testIncorrect2()
 
 std::vector<Point> getTestArray()
 {
-  static const int count = 50'000'000;
+  static const int count = 100'000'000;
   std::vector<Point> points(count, { -1, 1 });
   std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
   std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
