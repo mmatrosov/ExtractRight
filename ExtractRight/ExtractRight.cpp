@@ -317,6 +317,46 @@ public:
   }
 };
 
+class GatherNaive
+{
+public:
+  template<class It>
+  void operator()(It first, It last, It begin1, It end1, It begin2, It end2)
+  {
+    auto middle = begin2 == end2 ? begin1 : begin2;
+    std::rotate(first, middle, last);
+  }
+};
+
+class GatherSmart
+{
+public:
+  template<class It>
+  void operator()(It first, It last, It begin1, It end1, It begin2, It end2)
+  {
+    assert(begin2 == end2 || begin1 == first && end2 == last);
+    if (begin2 == end2)
+    {
+      if (begin1 != first)
+        std::move(begin1, end1, first);
+    }
+    else
+    {
+      auto len2 = std::distance(begin2, end2);
+      auto lenFree = std::distance(end1, begin2);
+      if (len2 <= lenFree)
+      {
+        auto len1 = std::distance(begin1, end1);
+        std::move_backward(begin1, end1, first + len1 + len2);
+        std::move(begin2, end2, first);
+      }
+      else
+        std::rotate(first, begin2, last);
+    }
+  }
+};
+
+template<class Gather>
 class ExtractInplace
 {
 public:
@@ -330,8 +370,7 @@ public:
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    auto middle = begin2 == end2 ? begin1 : begin2;
-    std::rotate(points.begin(), middle, points.end());
+    Gather()(points.begin(), points.end(), begin1, end1, begin2, end2);
 
     size_t count = end1 - begin1 + end2 - begin2;
     points.erase(points.begin() + count, points.end());
@@ -380,7 +419,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
 
   auto temp = input;
-  ExtractInplace()(temp);
+  ExtractInplace<GatherSmart>()(temp);
   EXPECT_TRUE(temp == answer);
 
 
@@ -412,7 +451,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
 
   auto temp = input;
-  EXPECT_THROW(ExtractInplace()(temp), std::runtime_error);
+  EXPECT_THROW(ExtractInplace<GatherSmart>()(temp), std::runtime_error);
 }
 
 void testRightLeft()
@@ -517,7 +556,7 @@ BENCHMARK_TEMPLATE(testView, ExtractView)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(testView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
 BENCHMARK_TEMPLATE(testView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
 
-template<class T>
+template<template<class> class T, class F>
 void testInplace(benchmark::State& state)
 {
   const auto points = getTestArray();
@@ -527,11 +566,12 @@ void testInplace(benchmark::State& state)
     state.PauseTiming();
     auto temp = points;
     state.ResumeTiming();
-    T()(temp);
+    T<F>()(temp);
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(testInplace, ExtractInplace)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testInplace, ExtractInplace, GatherNaive)->Apply(setupExtractBenchmark);
+BENCHMARK_TEMPLATE(testInplace, ExtractInplace, GatherSmart)->Apply(setupExtractBenchmark);
 
 void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
 {
