@@ -52,7 +52,7 @@ public:
 
     int p = 0;
     bool found = false;
-    for (int i = 1; i < points.size() && ~found; ++i)
+    for (int i = 1; i < points.size() && !found; ++i)
       if (points[i - 1].x < 0 && points[i].x >= 0)
       {
         p = i;
@@ -61,7 +61,7 @@ public:
 
     int q = 0;
     found = false;
-    for (int i = 1; i < points.size() && ~found; ++i)
+    for (int i = 1; i < points.size() && !found; ++i)
       if (points[i - 1].x >= 0 && points[i].x < 0)
       {
         q = i;
@@ -335,24 +335,20 @@ public:
   void operator()(It first, It last, It begin1, It end1, It begin2, It end2)
   {
     assert(begin2 == end2 || begin1 == first && end2 == last);
-    if (begin2 == end2)
-    {
+    if (begin2 == end2) {
       if (begin1 != first)
         std::move(begin1, end1, first);
+      return;
     }
-    else
-    {
-      auto len2 = std::distance(begin2, end2);
-      auto lenFree = std::distance(end1, begin2);
-      if (len2 <= lenFree)
-      {
-        auto len1 = std::distance(begin1, end1);
-        std::move_backward(begin1, end1, first + len1 + len2);
-        std::move(begin2, end2, first);
-      }
-      else
-        std::rotate(first, begin2, last);
+    auto len2 = std::distance(begin2, end2);
+    auto lenFree = std::distance(end1, begin2);
+    if (len2 <= lenFree) {
+      auto len1 = std::distance(begin1, end1);
+      std::move_backward(begin1, end1, first + len1 + len2);
+      std::move(begin2, end2, first);
+      return;
     }
+    std::rotate(first, begin2, last);
   }
 };
 
