@@ -554,6 +554,7 @@ void traverse(benchmark::State& state)
   }
 }
 BENCHMARK_TEMPLATE(traverse, ExtractCopy)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(traverse, ExtractView)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
 BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
 
