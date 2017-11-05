@@ -197,9 +197,8 @@ public:
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    return boost::join(
-      boost::make_iterator_range(begin2, end2),
-      boost::make_iterator_range(begin1, end1));
+    return boost::join(boost::make_iterator_range(begin2, end2),
+                       boost::make_iterator_range(begin1, end1));
   }
 };
 
@@ -217,9 +216,8 @@ public:
     if (!(begin2 == end2 || begin1 == first && end2 == last))
       throw std::runtime_error("Unexpected order");
 
-    return boost::join(
-      boost::make_iterator_range(begin2, end2),
-      boost::make_iterator_range(begin1, end1));
+    return boost::join(boost::make_iterator_range(begin2, end2),
+                       boost::make_iterator_range(begin1, end1));
   }
 
   auto operator()(const std::vector<Point>& points) const
