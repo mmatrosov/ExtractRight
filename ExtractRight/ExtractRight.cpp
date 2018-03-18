@@ -8,9 +8,16 @@
 #include <benchmark/benchmark.h>
 #pragma warning (pop)
 
+#include <experimental/generator>
+
 #include <iostream>
 #include <vector>
 #include <list>
+
+namespace std
+{
+  using std::experimental::generator;
+}
 
 struct Point
 {
@@ -35,131 +42,6 @@ inline bool operator!=(const Point& a, const Point& b)
 bool isRight(const Point& pt)
 {
   return pt.x >= 0;
-};
-
-class ExtractNaive
-{
-public: 
-  #pragma warning (push)
-  #pragma warning (disable : 4804)
-  const std::vector<Point> operator()(const std::vector<Point>& points) const
-  {
-    std::vector<Point> result;
-    result.clear();
-
-    if (points.size() == 0)
-      return result;
-
-    int p = 0;
-    bool found = false;
-    for (int i = 1; i < points.size() && !found; ++i)
-      if (points[i - 1].x < 0 && points[i].x >= 0)
-      {
-        p = i;
-        found = true;
-      }
-
-    int q = 0;
-    found = false;
-    for (int i = 1; i < points.size() && !found; ++i)
-      if (points[i - 1].x >= 0 && points[i].x < 0)
-      {
-        q = i;
-        found = true;
-      }
-
-    if (p == q)
-    {
-      if ((*points.begin()).x >= 0)
-        return points;
-      else
-        return result;
-    }
-
-    int i = p;
-    while (i != q)
-    {
-      if (points[i].x < 0)
-      {
-        result.clear();
-        Point left;
-        left.x = -1;
-        left.y = -1;
-        result.push_back(left);
-        return result;
-      }
-      result.push_back(points[i]);
-      if (++i >= points.size())
-        i = 0;
-    }
-
-    i = q;
-    while (i != p)
-    {
-      if (points[i].x >= 0)
-      {
-        result.clear();
-        Point left;
-        left.x = -1;
-        left.y = -1;
-        result.push_back(left);
-        return result;
-      }
-      if (++i >= points.size())
-        i = 0;
-    }
-
-    return std::move(result);
-  }
-#pragma warning (pop)
-};
-
-class ExtractRefactored
-{
-public:
-  std::vector<Point> operator()(const std::vector<Point>& points) const
-  {
-    std::vector<Point> result;
-
-    if (points.empty())
-      return result;
-
-    auto isRight = [](const Point& pt) { return pt.x >= 0; };
-
-    auto findBoundary = [&](bool rightToLeft)
-    {
-      for (int i = 1; i < points.size(); ++i)
-        if (isRight(points[i - 1]) == rightToLeft &&
-            isRight(points[i]) != rightToLeft)
-          return i;
-      return 0;
-    };
-
-    int p = findBoundary(false);
-    int q = findBoundary(true);
-
-    if (p == q)
-      return isRight(points[0]) ? points : result;
-
-    auto appendResult = [&](int from, int to, bool shouldBeRight)
-    {
-      int i = from;
-      while (i != to)
-      {
-        if (isRight(points[i]) != shouldBeRight)
-          throw std::runtime_error("Unexpected order");
-        if (shouldBeRight)
-          result.push_back(points[i]);
-        if (++i >= points.size())
-          i = 0;
-      }
-    };
-
-    appendResult(p, q, true);
-    appendResult(q, p, false);
-
-    return result;
-  }
 };
 
 class ExtractCopy
@@ -373,6 +255,26 @@ public:
   }
 };
 
+class ExtractViewCoroutine
+{
+public:
+  // Generic version is slow for some reason, due to templated predicate
+
+  std::generator<Point> operator()(const std::vector<Point>& points) const
+  {
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
+      throw std::runtime_error("Unexpected order");
+
+    for (auto it = begin2; it != end2; ++it) co_yield *it;
+    for (auto it = begin1; it != end1; ++it) co_yield *it;  
+  }
+};
+
 #define EXPECT_TRUE(x) if(!(x)) throw std::runtime_error("test failed")
 #define EXPECT_THROW(x, E) do { try { x; } catch (const E&) { break; } throw std::runtime_error("test failed"); } while (false)
 
@@ -407,8 +309,6 @@ void used()
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
-  EXPECT_TRUE(ExtractNaive()(input) == answer);
-  EXPECT_TRUE(ExtractRefactored()(input) == answer);
   EXPECT_TRUE(ExtractCopy()(input) == answer);
   EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
   EXPECT_TRUE(ExtractView()(input) == answer);
@@ -417,7 +317,6 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   auto temp = input;
   ExtractInplace<GatherSmart>()(temp);
   EXPECT_TRUE(temp == answer);
-
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -432,15 +331,14 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   Point p{};
   p = *outputRange.begin();
   *outputRange.begin() = p;
+
+  auto&& gen = ExtractViewCoroutine()(input);
+  auto yielded = std::vector<Point>(gen.begin(), gen.end());
+  EXPECT_TRUE(yielded == answer);
 }
 
 void checkFailure(const std::vector<Point>& input)
 {
-  auto answer = ExtractNaive()(input);
-  EXPECT_TRUE(answer.size() == 1);
-  EXPECT_TRUE(answer.front().x < 0 && answer.front().y < 0);
-
-  EXPECT_THROW(ExtractRefactored()(input), std::runtime_error);
   EXPECT_THROW(ExtractCopy()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
   EXPECT_THROW(ExtractView()(input), std::runtime_error);
@@ -511,7 +409,7 @@ void testIncorrect2()
   { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
-std::vector<Point> getTestArray()
+std::vector<Point> getBenchmarkArray()
 {
   static const int count = 1'000'000;
   std::vector<Point> points(count, { -1, 1 });
@@ -520,42 +418,15 @@ std::vector<Point> getTestArray()
   return points;
 }
 
-void setupExtractBenchmark(benchmark::internal::Benchmark* benchmark)
+void setupBenchmark(benchmark::internal::Benchmark* benchmark)
 {
   benchmark->Unit(benchmark::kMicrosecond);
 }
 
-template<class T>
-void testCopy(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(T()(points));
-  }
-}
-BENCHMARK_TEMPLATE(testCopy, ExtractNaive)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(testCopy, ExtractCopy)->Apply(setupExtractBenchmark);
-
-template<class T>
-void testView(benchmark::State& state)
-{
-  const auto points = getTestArray();
-
-  for (auto _ : state)
-  {
-    benchmark::DoNotOptimize(T()(points));
-  }
-}
-BENCHMARK_TEMPLATE(testView, ExtractView)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(testView, ExtractViewGeneric)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(testView, ExtractViewWrappingIterator)->Apply(setupExtractBenchmark);
-
 template<template<class> class T, class F>
-void testInplace(benchmark::State& state)
+void runInplace(benchmark::State& state)
 {
-  const auto points = getTestArray();
+  const auto points = getBenchmarkArray();
 
   for (auto _ : state)
   {
@@ -566,31 +437,29 @@ void testInplace(benchmark::State& state)
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(testInplace, ExtractInplace, GatherNaive)->Apply(setupExtractBenchmark);
-BENCHMARK_TEMPLATE(testInplace, ExtractInplace, GatherSmart)->Apply(setupExtractBenchmark);
-
-void setupTraverseBenchmark(benchmark::internal::Benchmark* benchmark)
-{
-  benchmark->Unit(benchmark::kMicrosecond);
-}
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark);
 
 template<class T>
-void traverse(benchmark::State& state)
+void run(benchmark::State& state)
 {
-  const auto points = getTestArray();
-  auto range = T()(points);
-  std::vector<Point> result(range.size());
+  const auto points = getBenchmarkArray();
+  std::vector<Point> result(points.size());
 
   for (auto _ : state)
   {
-    boost::range::copy(range, result.begin());
+    state.PauseTiming();
+    auto range = T()(points);
+    state.ResumeTiming();
+    std::copy(range.begin(), range.end(), result.begin());
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(traverse, ExtractCopy)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractView)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractViewGeneric)->Apply(setupTraverseBenchmark);
-BENCHMARK_TEMPLATE(traverse, ExtractViewWrappingIterator)->Apply(setupTraverseBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark);
 
 int main(int argc, char* argv[])
 {
