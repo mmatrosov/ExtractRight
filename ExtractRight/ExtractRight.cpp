@@ -8,6 +8,9 @@
 #include <benchmark/benchmark.h>
 #pragma warning (pop)
 
+#include <range/v3/core.hpp>
+#include <range/v3/view/concat.hpp>
+
 #include <experimental/generator>
 
 #include <iostream>
@@ -100,6 +103,30 @@ public:
 
     return boost::join(boost::make_iterator_range(begin2, end2),
                        boost::make_iterator_range(begin1, end1));
+  }
+
+  auto operator()(const std::vector<Point>& points) const
+  {
+    return operator()(points.begin(), points.end(), isRight);
+  }
+};
+
+class ExtractViewGenericRanges
+{
+public:
+  template<class It, class Predicate>
+  auto operator()(It first, It last, Predicate p) const
+  {
+    It begin1 = std::find_if    (first,  last, p);
+    It end1   = std::find_if_not(begin1, last, p);
+    It begin2 = std::find_if    (end1,   last, p);
+    It end2   = std::find_if_not(begin2, last, p);
+
+    if (!(begin2 == end2 || begin1 == first && end2 == last))
+      throw std::runtime_error("Unexpected order");
+
+    return ranges::view::concat(ranges::range<It>(begin2, end2),
+                                ranges::range<It>(begin1, end1));
   }
 
   auto operator()(const std::vector<Point>& points) const
@@ -313,6 +340,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
   EXPECT_TRUE(ExtractView()(input) == answer);
   EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
+  EXPECT_TRUE((ExtractViewGenericRanges()(input) | ranges::to_vector) == answer);
 
   auto temp = input;
   ExtractInplace<GatherSmart>()(temp);
@@ -343,6 +371,7 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
   EXPECT_THROW(ExtractView()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewGenericRanges()(input), std::runtime_error);
 
   auto temp = input;
   EXPECT_THROW(ExtractInplace<GatherSmart>()(temp), std::runtime_error);
@@ -458,6 +487,7 @@ void run(benchmark::State& state)
 BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark);
 
