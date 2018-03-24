@@ -333,8 +333,46 @@ void used()
 #endif
 }
 
-void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
+std::vector<Point> maskToVector(const std::string& mask)
 {
+  auto nx = boost::range::count(mask, 'X');
+  auto ns = boost::range::count(mask, '*');
+  if (!(nx == 0 && ns == 0 || ns == 1))
+    throw std::logic_error("Incorrect mask!");
+
+  auto result = std::vector<Point>(mask.size(), { -1, 0 });
+
+  int index = -1;  // Not known by default
+
+  for (int pass : { 0, 1 })
+  {
+    for (size_t i = 0; i < mask.size(); ++i)
+    {
+      const auto c = mask[i];
+      if (c == '*')
+      {
+        if (index < 0)
+          index = 0;  // First pass
+        else
+          break;  // Second pass
+      }
+      if (c == 'X' || c == '*')
+      {
+        if (index >= 0)
+          result[i] = Point(1, index++);
+      }
+    }
+    
+  }
+
+  return result;
+}
+
+void checkAnswer(const std::string& inputMask, const std::string& answerMask)
+{
+  const auto input = maskToVector(inputMask);
+  const auto answer = maskToVector(answerMask);
+
   EXPECT_EQ(answer, ExtractCopy()(input));
   EXPECT_EQ(answer, ExtractViewWrappingIterator()(input));
   EXPECT_EQ(answer, ExtractView()(input));
@@ -364,8 +402,10 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
   EXPECT_EQ(answer, yielded);
 }
 
-void checkFailure(const std::vector<Point>& input)
+void checkFailure(const std::string& inputMask)
 {
+  const auto input = maskToVector(inputMask);
+
   EXPECT_THROW(ExtractCopy()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
   EXPECT_THROW(ExtractView()(input), std::runtime_error);
@@ -378,63 +418,47 @@ void checkFailure(const std::vector<Point>& input)
 
 TEST(ExtractTest, RightLeft)
 {
-  checkAnswer(
-    { { 1, 1 }, { 1, 2 }, { -1, 3 } },
-    { { 1, 1 }, { 1, 2 } });
+  checkAnswer("*X.", "*X");
 }
 
 TEST(ExtractTest, LeftRight)
 {
-  checkAnswer(
-    { { -1, 1 }, { 1, 2 }, { 1, 3 } },
-    { { 1, 2 }, { 1, 3 } });
+  checkAnswer(".*X", "*X");
 }
 
 TEST(ExtractTest, LeftRightLeft)
 {
-  checkAnswer(
-    { { -1, 1 }, { 1, 2 }, { 1, 3 }, { -1, 4 } },
-    { { 1, 2 }, { 1, 3 } });
+  checkAnswer(".*X.", "*X");
 }
 
 TEST(ExtractTest, RightLeftRight)
 {
-  checkAnswer(
-    { { 1, 1 }, { -1, 2 }, { 1, 3 } },
-    { { 1, 3 }, { 1, 1 } });
+  checkAnswer("X.*", "*X");
 }
 
 TEST(ExtractTest, OnlyLeft)
 {
-  checkAnswer(
-    { { -1, 1 }, { -1, 2 }, { -1, 3 } },
-    {});
+  checkAnswer("...", "");
 }
 
 TEST(ExtractTest, OnlyRight)
 {
-  checkAnswer(
-    { { 1, 1 }, { 1, 2 }, { 1, 3 } },
-    { { 1, 1 }, { 1, 2 }, { 1, 3 } });
+  checkAnswer("*XX", "*XX");
 }
 
 TEST(ExtractTest, Empty)
 {
-  checkAnswer(
-    {},
-    {});
+  checkAnswer("", "");
 }
 
 TEST(ExtractTest, Incorrect1)
 {
-  checkFailure(
-    { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } });
+  checkFailure(".*.X");
 }
 
 TEST(ExtractTest, Incorrect2)
 {
-  checkFailure(
-    { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
+  checkFailure("*.X.");
 }
 
 std::vector<Point> getBenchmarkArray()
