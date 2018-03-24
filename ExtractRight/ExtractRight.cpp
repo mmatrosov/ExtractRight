@@ -451,6 +451,31 @@ TEST(ExtractTest, Empty)
   checkAnswer("", "");
 }
 
+TEST(ExtractTest, Lonely)
+{
+  checkAnswer(".............*.....", "*");
+}
+
+TEST(ExtractTest, MostlyAtTheEnd)
+{
+  checkAnswer("........*XXXXXXXX.", "*XXXXXXXX");
+}
+
+TEST(ExtractTest, MostlyAtTheBeginning)
+{
+  checkAnswer(".*XXXXXXXX........", "*XXXXXXXX");
+}
+
+TEST(ExtractTest, OneMissingNearEnd)
+{
+  checkAnswer("XXXXXXXXXXXXXX.*", "*XXXXXXXXXXXXXX");
+}
+
+TEST(ExtractTest, OneMissingNearBeginning)
+{
+  checkAnswer("X.*XXXXXXXXXXXXX", "*XXXXXXXXXXXXXX");
+}
+
 TEST(ExtractTest, Incorrect1)
 {
   checkFailure(".*.X");
@@ -459,6 +484,11 @@ TEST(ExtractTest, Incorrect1)
 TEST(ExtractTest, Incorrect2)
 {
   checkFailure("*.X.");
+}
+
+TEST(ExtractTest, Incorrect3)
+{
+  checkFailure("*XXXX.XXXXXXXX.XXXX");
 }
 
 std::vector<Point> getBenchmarkArray()
