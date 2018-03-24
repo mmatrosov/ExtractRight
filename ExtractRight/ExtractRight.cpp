@@ -8,6 +8,8 @@
 #include <benchmark/benchmark.h>
 #pragma warning (pop)
 
+#include <gtest/gtest.h>
+
 #include <range/v3/core.hpp>
 #include <range/v3/view/concat.hpp>
 
@@ -302,9 +304,6 @@ public:
   }
 };
 
-#define EXPECT_TRUE(x) if(!(x)) throw std::runtime_error("test failed")
-#define EXPECT_THROW(x, E) do { try { x; } catch (const E&) { break; } throw std::runtime_error("test failed"); } while (false)
-
 void used()
 {
 #if 0
@@ -336,15 +335,15 @@ void used()
 
 void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answer)
 {
-  EXPECT_TRUE(ExtractCopy()(input) == answer);
-  EXPECT_TRUE(ExtractViewWrappingIterator()(input) == answer);
-  EXPECT_TRUE(ExtractView()(input) == answer);
-  EXPECT_TRUE(ExtractViewGeneric()(input) == answer);
-  EXPECT_TRUE((ExtractViewGenericRanges()(input) | ranges::to_vector) == answer);
+  EXPECT_EQ(answer, ExtractCopy()(input));
+  EXPECT_EQ(answer, ExtractViewWrappingIterator()(input));
+  EXPECT_EQ(answer, ExtractView()(input));
+  EXPECT_EQ(answer, ExtractViewGeneric()(input));
+  EXPECT_EQ(answer, ExtractViewGenericRanges()(input) | ranges::to_vector);
 
   auto temp = input;
   ExtractInplace<GatherSmart>()(temp);
-  EXPECT_TRUE(temp == answer);
+  EXPECT_EQ(answer, temp);
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -354,7 +353,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 
   auto inputList = std::list<Point>(input.begin(), input.end());
   auto outputRange = ExtractViewGeneric()(inputList.begin(), inputList.end(), isRight);
-  EXPECT_TRUE(outputRange == answer);
+  EXPECT_EQ(answer, outputRange);
 
   Point p{};
   p = *outputRange.begin();
@@ -362,7 +361,7 @@ void checkAnswer(const std::vector<Point>& input, const std::vector<Point>& answ
 
   auto&& gen = ExtractViewCoroutine()(input);
   auto yielded = std::vector<Point>(gen.begin(), gen.end());
-  EXPECT_TRUE(yielded == answer);
+  EXPECT_EQ(answer, yielded);
 }
 
 void checkFailure(const std::vector<Point>& input)
@@ -377,65 +376,65 @@ void checkFailure(const std::vector<Point>& input)
   EXPECT_THROW(ExtractInplace<GatherSmart>()(temp), std::runtime_error);
 }
 
-void testRightLeft()
+TEST(ExtractTest, RightLeft)
 {
   checkAnswer(
-  { { 1, 1 }, { 1, 2 }, { -1, 3 } },
-  { { 1, 1 }, { 1, 2 } });
+    { { 1, 1 }, { 1, 2 }, { -1, 3 } },
+    { { 1, 1 }, { 1, 2 } });
 }
 
-void testLeftRight()
+TEST(ExtractTest, LeftRight)
 {
   checkAnswer(
-  { { -1, 1 }, { 1, 2 }, { 1, 3 } },
-  { { 1, 2 }, { 1, 3 } });
+    { { -1, 1 }, { 1, 2 }, { 1, 3 } },
+    { { 1, 2 }, { 1, 3 } });
 }
 
-void testLeftRightLeft()
+TEST(ExtractTest, LeftRightLeft)
 {
   checkAnswer(
-  { { -1, 1 }, { 1, 2 }, { 1, 3 }, { -1, 4 } },
-  { { 1, 2 }, { 1, 3 } });
+    { { -1, 1 }, { 1, 2 }, { 1, 3 }, { -1, 4 } },
+    { { 1, 2 }, { 1, 3 } });
 }
 
-void testRightLeftRight()
+TEST(ExtractTest, RightLeftRight)
 {
   checkAnswer(
-  { { 1, 1 }, { -1, 2 }, { 1, 3 } },
-  { { 1, 3 }, { 1, 1 } });
+    { { 1, 1 }, { -1, 2 }, { 1, 3 } },
+    { { 1, 3 }, { 1, 1 } });
 }
 
-void testOnlyLeft()
+TEST(ExtractTest, OnlyLeft)
 {
   checkAnswer(
-  { { -1, 1 }, { -1, 2 }, { -1, 3 } },
-  {});
+    { { -1, 1 }, { -1, 2 }, { -1, 3 } },
+    {});
 }
 
-void testOnlyRight()
+TEST(ExtractTest, OnlyRight)
 {
   checkAnswer(
-  { { 1, 1 }, { 1, 2 }, { 1, 3 } },
-  { { 1, 1 }, { 1, 2 }, { 1, 3 } });
+    { { 1, 1 }, { 1, 2 }, { 1, 3 } },
+    { { 1, 1 }, { 1, 2 }, { 1, 3 } });
 }
 
-void testEmpty()
+TEST(ExtractTest, Empty)
 {
   checkAnswer(
-  {},
-  {});
+    {},
+    {});
 }
 
-void testIncorrect1()
+TEST(ExtractTest, Incorrect1)
 {
   checkFailure(
-  { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } });
+    { { -1, 1 }, { 1, 2 }, { -1, 3 }, { 1, 4 } });
 }
 
-void testIncorrect2()
+TEST(ExtractTest, Incorrect2)
 {
   checkFailure(
-  { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
+    { { 1, 1 }, { -1, 2 }, { 1, 3 }, { -1, 4 } });
 }
 
 std::vector<Point> getBenchmarkArray()
@@ -493,25 +492,9 @@ BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark);
 
 int main(int argc, char* argv[])
 {
-  try
-  {
-    testRightLeft();
-    testLeftRight();
-    testLeftRightLeft();
-    testRightLeftRight();
-    testOnlyLeft();
-    testOnlyRight();
-    testEmpty();
-    testIncorrect1();
-    testIncorrect2();
-  }
-  catch (const std::runtime_error&)
-  {
-    std::cout << "Failure!" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  std::cout << "Success." << std::endl;
+  testing::InitGoogleTest(&argc, argv);
+  if (auto status = RUN_ALL_TESTS(); status != 0)
+    return status;
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

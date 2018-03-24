@@ -14,8 +14,8 @@ set(BENCHMARK_ENABLE_TESTING false)
 add_subdirectory(benchmark)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "/EHsc /await")
 set(CMAKE_SUPPRESS_REGENERATION true)
+add_compile_options(/EHsc /await)
 
 add_executable(ExtractRight ExtractRight/ExtractRight.cpp)
 target_link_libraries(ExtractRight gtest benchmark)
