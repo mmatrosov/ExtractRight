@@ -65,7 +65,7 @@ public:
       throw std::runtime_error("Unexpected order");
 
     std::vector<Point> result;
-    result.reserve(end1 - begin1 + end2 - begin2);
+    result.reserve((end1 - begin1) + (end2 - begin2));
     result.insert(result.end(), begin2, end2);
     result.insert(result.end(), begin1, end1);
 
@@ -259,7 +259,7 @@ public:
     auto middle = begin2 == end2 ? begin1 : begin2;
     auto beginRes = makeWrappingIterator(middle, points.begin(), points.end());
 
-    size_t count = end1 - begin1 + end2 - begin2;
+    size_t count = (end1 - begin1) + (end2 - begin2);
     return boost::make_iterator_range(beginRes, beginRes + count);
   }
 };
@@ -315,7 +315,7 @@ public:
 
     Gather()(points.begin(), points.end(), begin1, end1, begin2, end2);
 
-    size_t count = end1 - begin1 + end2 - begin2;
+    size_t count = (end1 - begin1) + (end2 - begin2);
     points.erase(points.begin() + count, points.end());
   }
 };
@@ -430,9 +430,12 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   auto outputRange = ExtractViewGeneric()(inputList.begin(), inputList.end(), isRight);
   EXPECT_EQ(answer, outputRange);
 
-  Point p{};
-  p = *outputRange.begin();
-  *outputRange.begin() = p;
+  if (!outputRange.empty())
+  {
+    Point p{};
+    p = *outputRange.begin();
+    *outputRange.begin() = p;
+  }
 
   auto&& gen = ExtractViewCoroutine()(input);
   auto yielded = std::vector<Point>(gen.begin(), gen.end());
