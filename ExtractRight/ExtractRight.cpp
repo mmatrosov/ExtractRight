@@ -1,3 +1,5 @@
+#define _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
+
 #include <boost/range/algorithm.hpp>
 #include <boost/range/join.hpp>
 #include <boost/algorithm/cxx11/is_partitioned.hpp>
@@ -86,6 +88,40 @@ public:
 
     return boost::join(boost::make_iterator_range(begin2, end2),
                        boost::make_iterator_range(begin1, end1));
+  }
+};
+
+template<class It>
+struct Bounds
+{
+  It begin1, end1, begin2, end2;
+};
+
+template<class It, class Predicate>
+Bounds<It> findBounds(It first, It last, Predicate p)
+{
+  auto begin1 = std::find_if    (first,  last, p);
+  auto end1   = std::find_if_not(begin1, last, p);
+  auto begin2 = std::find_if    (end1,   last, p);
+  auto end2   = std::find_if_not(begin2, last, p);
+  return { begin1, end1, begin2, end2 };
+}
+
+class ExtractNoCheck
+{
+public:
+  template<class It, class Predicate>
+  auto operator()(It first, It last, Predicate p) const
+  {
+    auto bounds = findBounds(first, last, p);
+
+    return boost::join(boost::make_iterator_range(bounds.begin2, bounds.end2),
+                       boost::make_iterator_range(bounds.begin1, bounds.end1));
+  }
+
+  auto operator()(const std::vector<Point>& points) const
+  {
+    return operator()(points.begin(), points.end(), isRight);
   }
 };
 
@@ -378,6 +414,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   EXPECT_EQ(answer, ExtractView()(input));
   EXPECT_EQ(answer, ExtractViewGeneric()(input));
   EXPECT_EQ(answer, ExtractViewGenericRanges()(input) | ranges::to_vector);
+  EXPECT_EQ(answer, ExtractNoCheck()(input));
 
   auto temp = input;
   ExtractInplace<GatherSmart>()(temp);
