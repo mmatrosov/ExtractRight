@@ -539,35 +539,17 @@ TEST(FindAnyTest, OptimalSampling)
     ASSERT_NO_FATAL_FAILURE(checkFindAnyOptimalSampling(count));
 }
 
-enum DataSet
-{
-  DsHalf, DsSqrt, DsFull, DsEmpty
-};
+static const int BenchDataSize = 1 << 20;
 
-std::vector<Point> getBenchmarkArray(DataSet ds = DsHalf)
+std::vector<Point> getBenchmarkArray(int fraction)
 {
   static const auto sample = Point{ 1, 1 };
   static const auto hole = Point{ -1, 1 };
 
-  static const int count = 1'000'000;
-  std::vector<Point> points(count, hole);
+  std::vector<Point> points(BenchDataSize, hole);
 
-  int len = 0;
-  switch (ds)
-  {
-  case DsHalf:
-    len = count / 2;
-    break;
-  case DsSqrt:
-    len = static_cast<int>(std::sqrt(count));
-    break;
-  case DsFull:
-    len = count;
-    break;
-  default:
-    break;
-  }
-
+  const int len = BenchDataSize / fraction;
+ 
   std::fill_n(points.begin(), len / 2, sample);
   std::fill_n(points.rbegin(), len / 2, sample);
   return points;
@@ -575,13 +557,13 @@ std::vector<Point> getBenchmarkArray(DataSet ds = DsHalf)
 
 void setupBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMicrosecond)->ArgName("Set");
+  benchmark->Unit(benchmark::kMicrosecond)->ArgName("Fraction");
 }
 
 template<template<class> class T, class F>
 void runInplace(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray();
+  const auto points = getBenchmarkArray(state.range(0));
 
   for (auto _ : state)
   {
@@ -590,14 +572,13 @@ void runInplace(benchmark::State& state)
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(2);
 
 template<class T>
 void run(benchmark::State& state)
 {
-  auto ds = DataSet(state.range(0));
-  const auto points = getBenchmarkArray(ds);
+  const auto points = getBenchmarkArray(state.range(0));
   std::vector<Point> result(points.size());
 
   for (auto _ : state)
@@ -607,16 +588,16 @@ void run(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(DsHalf);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(2);
 
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(DsSqrt)->Arg(DsFull)->Arg(DsEmpty);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(DsSqrt)->Arg(DsFull)->Arg(DsEmpty);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
 
 int main(int argc, char* argv[])
 {
