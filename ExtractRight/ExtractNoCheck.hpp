@@ -44,7 +44,26 @@ It findAny(It first, It last, Predicate p)
 template<class It, class Predicate>
 Bounds<It> findBounds(It first, It last, Predicate p, std::random_access_iterator_tag)
 {
-  return findBounds(first, last, p, std::forward_iterator_tag{});
+  Bounds<It> bounds = { first, last, last, last };  // Whole sequence by default
+
+  if (first == last)
+    return bounds;
+
+  if (!p(*first) || !p(last[-1]))
+  {
+    // One segment, or empty
+    It sample = findAny(first, last, p);
+    bounds.begin1 = std::partition_point(first, sample, std::not_fn(p));
+    bounds.end1 = std::partition_point(sample, last, p);
+  }
+  else if (It hole = findAny(first, last, std::not_fn(p)); hole != last)
+  {
+    // Two segments
+    bounds.end1 = std::partition_point(first, hole, p);
+    bounds.begin2 = std::partition_point(hole, last, std::not_fn(p));
+  }
+
+  return bounds;
 }
 
 template<class It, class Predicate>

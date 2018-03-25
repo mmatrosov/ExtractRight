@@ -37,3 +37,9 @@ inline bool isRight(const Point& pt)
 {
   return pt.x >= 0;
 };
+
+// Convenient for unit tests
+inline std::ostream& operator<<(std::ostream& os, const Point& p)
+{
+  return os << '(' << p.x << ", " << p.y << ')';
+}
