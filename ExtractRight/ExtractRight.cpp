@@ -541,7 +541,12 @@ TEST(FindAnyTest, OptimalSampling)
 
 static const int BenchDataSize = 1 << 20;
 
-std::vector<Point> getBenchmarkArray(int fraction)
+enum Distribution
+{
+  BothEnds, Beginning
+};
+
+std::vector<Point> getBenchmarkArray(Distribution dist, int fraction)
 {
   static const auto sample = Point{ 1, 1 };
   static const auto hole = Point{ -1, 1 };
@@ -549,9 +554,17 @@ std::vector<Point> getBenchmarkArray(int fraction)
   std::vector<Point> points(BenchDataSize, hole);
 
   const int len = BenchDataSize / fraction;
- 
-  std::fill_n(points.begin(), len / 2, sample);
-  std::fill_n(points.rbegin(), len / 2, sample);
+
+  if (dist == BothEnds)
+  {
+    std::fill_n(points.begin(), len / 2, sample);
+    std::fill_n(points.rbegin(), len / 2, sample);
+  }
+  else
+  {
+    std::fill_n(points.begin(), len, sample);   
+  }
+
   return points;
 }
 
@@ -563,7 +576,7 @@ void setupBenchmark(benchmark::internal::Benchmark* benchmark)
 template<template<class> class T, class F>
 void runInplace(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray(state.range(0));
+  const auto points = getBenchmarkArray(BothEnds, state.range(0));
 
   for (auto _ : state)
   {
@@ -575,10 +588,10 @@ void runInplace(benchmark::State& state)
 BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(2);
 
-template<class T>
+template<class T, Distribution Dist = BothEnds>
 void run(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray(state.range(0));
+  const auto points = getBenchmarkArray(Dist, state.range(0));
   std::vector<Point> result(points.size());
 
   for (auto _ : state)
@@ -596,8 +609,8 @@ BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(2);
 
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
 
 int main(int argc, char* argv[])
 {
