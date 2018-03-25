@@ -20,6 +20,7 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <cctype>
 
 namespace std
 {
@@ -98,13 +99,48 @@ struct Bounds
 };
 
 template<class It, class Predicate>
-Bounds<It> findBounds(It first, It last, Predicate p)
+Bounds<It> findBounds(It first, It last, Predicate p, std::forward_iterator_tag)
 {
   auto begin1 = std::find_if    (first,  last, p);
   auto end1   = std::find_if_not(begin1, last, p);
   auto begin2 = std::find_if    (end1,   last, p);
-  auto end2   = std::find_if_not(begin2, last, p);
-  return { begin1, end1, begin2, end2 };
+  return { begin1, end1, begin2, last };
+}
+
+template<class It, class Predicate>  // It is RandomAccess
+It findAny(It first, It last, Predicate p)
+{
+  using diff_t = typename std::iterator_traits<It>::difference_type;
+
+  diff_t n = last - first;
+
+  diff_t step = 1;
+  while (step <= n)
+    step *= 2;
+
+  while (step > 1)
+  {
+    for (diff_t i = step / 2 - 1; i < n; i += step)
+    {
+      if (p(first[i]))
+        return first + i;
+    }
+    step /= 2;
+  }
+
+  return last;
+}
+
+template<class It, class Predicate>
+Bounds<It> findBounds(It first, It last, Predicate p, std::random_access_iterator_tag)
+{
+  return findBounds(first, last, p, std::forward_iterator_tag{});
+}
+
+template<class It, class Predicate>
+Bounds<It> findBounds(It first, It last, Predicate p)
+{
+  return findBounds(first, last, p, std::iterator_traits<It>::iterator_category{});
 }
 
 class ExtractNoCheck
@@ -531,12 +567,98 @@ TEST(ExtractTest, Incorrect3)
   checkFailure("*XXXX.XXXXXXXX.XXXX");
 }
 
+void checkFindAny(const std::string& str)
+{
+  auto it = findAny(str.begin(), str.end(), std::isalpha);
+
+  if (it != str.end())
+    ASSERT_TRUE(std::isalpha(*it));
+  else
+    ASSERT_EQ(0, boost::range::count_if(str, std::isalpha));
+}
+
+TEST(FindAnyTest, Empty)
+{
+  checkFindAny("");
+}
+
+TEST(FindAnyTest, Absent)
+{
+  checkFindAny(".");
+  checkFindAny("..");
+  checkFindAny("...");
+  checkFindAny("...............");
+  checkFindAny("................");  // 16 chars
+  checkFindAny(".................");
+}
+
+TEST(FindAnyTest, Existing)
+{
+  checkFindAny("X");
+  checkFindAny("X.");
+  checkFindAny(".X");
+  checkFindAny("X..");
+  checkFindAny(".X.");
+  checkFindAny("..X");
+  checkFindAny("X..............");
+  checkFindAny("X...............");  // 16 chars
+  checkFindAny("X................");
+  checkFindAny("..............X");
+  checkFindAny("...............X");  // 16 chars
+  checkFindAny("................X");
+  checkFindAny("......XXX......");
+  checkFindAny("......XXX.......");  // 16 chars
+  checkFindAny("......XXX........");
+}
+
+TEST(FindAnyTest, Batch)
+{
+  for (int len = 0; len < 128; ++len)
+  {
+    const auto baseStr = std::string(len, '.');
+    ASSERT_NO_FATAL_FAILURE(checkFindAny(baseStr));
+
+    for (int i = 0; i < len; ++i)
+    {
+      auto str = baseStr;
+      str[i] = 'X';
+      ASSERT_NO_FATAL_FAILURE(checkFindAny(str));
+    }
+  }
+}
+
+void checkFindAnyOptimalSampling(const int count)
+{
+  int numSamples = 0;
+  auto p = [&](char c) { ++numSamples; return std::isalpha(c); };
+
+  auto str = std::string(count, '.');
+  auto it = findAny(str.begin(), str.end(), p);
+
+  ASSERT_EQ(str.end(), it);
+  ASSERT_EQ(count, numSamples);
+}
+
+TEST(FindAnyTest, OptimalSampling)
+{
+  for (int count = 0; count < 128; ++count)
+    ASSERT_NO_FATAL_FAILURE(checkFindAnyOptimalSampling(count));
+}
+
 std::vector<Point> getBenchmarkArray()
 {
   static const int count = 1'000'000;
   std::vector<Point> points(count, { -1, 1 });
   std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
   std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
+  return points;
+}
+
+std::vector<Point> getBenchmarkArray2()
+{
+  static const int count = 1'000'000;
+  std::vector<Point> points(count, { -1, 1 });
+  std::fill_n(points.begin(), static_cast<int>(std::sqrt(count)), Point{ 1, 1 });
   return points;
 }
 
@@ -583,6 +705,23 @@ BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark);
+
+template<class T>
+void run2(benchmark::State& state)
+{
+  const auto points = getBenchmarkArray2();
+  std::vector<Point> result(points.size());
+
+  for (auto _ : state)
+  {
+    auto range = T()(points);
+    std::copy(range.begin(), range.end(), result.begin());
+    benchmark::DoNotOptimize(result);
+  }
+}
+BENCHMARK_TEMPLATE(run2, ExtractViewGeneric)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run2, ExtractNoCheck)->Apply(setupBenchmark);
 
 int main(int argc, char* argv[])
 {
