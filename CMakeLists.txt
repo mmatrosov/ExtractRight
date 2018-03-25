@@ -17,5 +17,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_SUPPRESS_REGENERATION true)
 add_compile_options(/EHsc /await)
 
-add_executable(ExtractRight ExtractRight/ExtractRight.cpp)
+add_executable(ExtractRight 
+  ExtractRight/ExtractRight.cpp 
+  ExtractRight/ExtractNoCheck.hpp
+  ExtractRight/Common.hpp)
 target_link_libraries(ExtractRight gtest benchmark)

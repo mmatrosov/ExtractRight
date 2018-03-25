@@ -1,9 +1,6 @@
 #define _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING
 
-#include <boost/range/algorithm.hpp>
-#include <boost/range/join.hpp>
-#include <boost/algorithm/cxx11/is_partitioned.hpp>
-#include <boost/algorithm/cxx11/partition_point.hpp>
+#include "ExtractNoCheck.hpp"
 
 #pragma warning (push)
 #pragma warning (disable : 4141)
@@ -12,45 +9,13 @@
 
 #include <gtest/gtest.h>
 
-#include <range/v3/core.hpp>
-#include <range/v3/view/concat.hpp>
-
-#include <experimental/generator>
-
 #include <iostream>
-#include <vector>
 #include <list>
-#include <cctype>
 
 namespace std
 {
   using std::experimental::generator;
 }
-
-struct Point
-{
-  using T = int;
-
-  T x;
-  T y;
-
-  Point() = default;
-  Point(T x, T y) : x(x), y(y) {}
-};
-
-inline bool operator==(const Point& a, const Point& b)
-{
-  return a.x == b.x && a.y == b.y;
-}
-inline bool operator!=(const Point& a, const Point& b)
-{
-  return !(a == b);
-}
-
-bool isRight(const Point& pt)
-{
-  return pt.x >= 0;
-};
 
 class ExtractCopy
 {
@@ -89,75 +54,6 @@ public:
 
     return boost::join(boost::make_iterator_range(begin2, end2),
                        boost::make_iterator_range(begin1, end1));
-  }
-};
-
-template<class It>
-struct Bounds
-{
-  It begin1, end1, begin2, end2;
-};
-
-template<class It, class Predicate>
-Bounds<It> findBounds(It first, It last, Predicate p, std::forward_iterator_tag)
-{
-  auto begin1 = std::find_if    (first,  last, p);
-  auto end1   = std::find_if_not(begin1, last, p);
-  auto begin2 = std::find_if    (end1,   last, p);
-  return { begin1, end1, begin2, last };
-}
-
-template<class It, class Predicate>  // It is RandomAccess
-It findAny(It first, It last, Predicate p)
-{
-  using diff_t = typename std::iterator_traits<It>::difference_type;
-
-  diff_t n = last - first;
-
-  diff_t step = 1;
-  while (step <= n)
-    step *= 2;
-
-  while (step > 1)
-  {
-    for (diff_t i = step / 2 - 1; i < n; i += step)
-    {
-      if (p(first[i]))
-        return first + i;
-    }
-    step /= 2;
-  }
-
-  return last;
-}
-
-template<class It, class Predicate>
-Bounds<It> findBounds(It first, It last, Predicate p, std::random_access_iterator_tag)
-{
-  return findBounds(first, last, p, std::forward_iterator_tag{});
-}
-
-template<class It, class Predicate>
-Bounds<It> findBounds(It first, It last, Predicate p)
-{
-  return findBounds(first, last, p, std::iterator_traits<It>::iterator_category{});
-}
-
-class ExtractNoCheck
-{
-public:
-  template<class It, class Predicate>
-  auto operator()(It first, It last, Predicate p) const
-  {
-    auto bounds = findBounds(first, last, p);
-
-    return boost::join(boost::make_iterator_range(bounds.begin2, bounds.end2),
-                       boost::make_iterator_range(bounds.begin1, bounds.end1));
-  }
-
-  auto operator()(const std::vector<Point>& points) const
-  {
-    return operator()(points.begin(), points.end(), isRight);
   }
 };
 
