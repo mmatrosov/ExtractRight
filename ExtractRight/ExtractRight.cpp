@@ -539,26 +539,43 @@ TEST(FindAnyTest, OptimalSampling)
     ASSERT_NO_FATAL_FAILURE(checkFindAnyOptimalSampling(count));
 }
 
-std::vector<Point> getBenchmarkArray()
+enum DataSet
 {
-  static const int count = 1'000'000;
-  std::vector<Point> points(count, { -1, 1 });
-  std::fill_n(points.begin(), count / 4, Point{ 1, 1 });
-  std::fill_n(points.rbegin(), count / 4, Point{ 1, 1 });
-  return points;
-}
+  DsHalf, DsSqrt, DsFull, DsEmpty
+};
 
-std::vector<Point> getBenchmarkArray2()
+std::vector<Point> getBenchmarkArray(DataSet ds = DsHalf)
 {
+  static const auto sample = Point{ 1, 1 };
+  static const auto hole = Point{ -1, 1 };
+
   static const int count = 1'000'000;
-  std::vector<Point> points(count, { -1, 1 });
-  std::fill_n(points.begin(), static_cast<int>(std::sqrt(count)), Point{ 1, 1 });
+  std::vector<Point> points(count, hole);
+
+  int len = 0;
+  switch (ds)
+  {
+  case DsHalf:
+    len = count / 2;
+    break;
+  case DsSqrt:
+    len = static_cast<int>(std::sqrt(count));
+    break;
+  case DsFull:
+    len = count;
+    break;
+  default:
+    break;
+  }
+
+  std::fill_n(points.begin(), len / 2, sample);
+  std::fill_n(points.rbegin(), len / 2, sample);
   return points;
 }
 
 void setupBenchmark(benchmark::internal::Benchmark* benchmark)
 {
-  benchmark->Unit(benchmark::kMicrosecond);
+  benchmark->Unit(benchmark::kMicrosecond)->ArgName("Set");
 }
 
 template<template<class> class T, class F>
@@ -568,43 +585,19 @@ void runInplace(benchmark::State& state)
 
   for (auto _ : state)
   {
-    state.PauseTiming();
     auto temp = points;
-    state.ResumeTiming();
     T<F>()(temp);
     benchmark::DoNotOptimize(temp);
   }
 }
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(DsHalf);
 
 template<class T>
 void run(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray();
-  std::vector<Point> result(points.size());
-
-  for (auto _ : state)
-  {
-    state.PauseTiming();
-    auto range = T()(points);
-    state.ResumeTiming();
-    std::copy(range.begin(), range.end(), result.begin());
-    benchmark::DoNotOptimize(result);
-  }
-}
-BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark);
-
-template<class T>
-void run2(benchmark::State& state)
-{
-  const auto points = getBenchmarkArray2();
+  auto ds = DataSet(state.range(0));
+  const auto points = getBenchmarkArray(ds);
   std::vector<Point> result(points.size());
 
   for (auto _ : state)
@@ -614,8 +607,16 @@ void run2(benchmark::State& state)
     benchmark::DoNotOptimize(result);
   }
 }
-BENCHMARK_TEMPLATE(run2, ExtractViewGeneric)->Apply(setupBenchmark);
-BENCHMARK_TEMPLATE(run2, ExtractNoCheck)->Apply(setupBenchmark);
+BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(DsHalf);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(DsHalf);
+
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(DsSqrt)->Arg(DsFull)->Arg(DsEmpty);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(DsSqrt)->Arg(DsFull)->Arg(DsEmpty);
 
 int main(int argc, char* argv[])
 {
