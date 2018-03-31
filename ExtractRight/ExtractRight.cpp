@@ -230,10 +230,10 @@ public:
 };
 
 template<class Gather>
-class ExtractInplace
+class ExtractMove
 {
 public:
-  void operator()(std::vector<Point>& points) const
+  std::vector<Point> operator()(std::vector<Point>&& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -247,6 +247,8 @@ public:
 
     size_t count = (end1 - begin1) + (end2 - begin2);
     points.erase(points.begin() + count, points.end());
+
+    return std::move(points);  // Note move! https://stackoverflow.com/a/29128776/261217
   }
 };
 
@@ -345,10 +347,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   EXPECT_EQ(answer, ExtractViewGeneric()(input));
   EXPECT_EQ(answer, ExtractViewGenericRanges()(input) | ranges::to_vector);
   EXPECT_EQ(answer, ExtractNoCheck()(input));
-
-  auto temp = input;
-  ExtractInplace<GatherSmart>()(temp);
-  EXPECT_EQ(answer, temp);
+  EXPECT_EQ(answer, ExtractMove<GatherSmart>()(std::vector<Point>(input)));
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -381,9 +380,7 @@ void checkFailure(const std::string& inputMask)
   EXPECT_THROW(ExtractView()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGenericRanges()(input), std::runtime_error);
-
-  auto temp = input;
-  EXPECT_THROW(ExtractInplace<GatherSmart>()(temp), std::runtime_error);
+  EXPECT_THROW(ExtractMove<GatherSmart>()(std::vector<Point>(input)), std::runtime_error);
 }
 
 TEST(ExtractTest, RightLeft)
@@ -573,22 +570,31 @@ void setupBenchmark(benchmark::internal::Benchmark* benchmark)
   benchmark->Unit(benchmark::kMicrosecond)->ArgName("Fraction");
 }
 
-template<template<class> class T, class F>
-void runInplace(benchmark::State& state)
+enum Mode { Full, NoTraverse, OnlyInit };
+
+template<template<class> class T, class F, Mode mode = Full>
+void runMove(benchmark::State& state)
 {
   const auto points = getBenchmarkArray(BothEnds, state.range(0));
 
   for (auto _ : state)
   {
     auto temp = points;
-    T<F>()(temp);
-    benchmark::DoNotOptimize(temp);
+    if constexpr (mode == Full)
+    {
+      auto answer = T<F>()(std::move(temp));
+      benchmark::DoNotOptimize(answer);
+    }
+    else
+    {
+      benchmark::DoNotOptimize(temp);
+    }
   }
 }
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(2);
-
-enum Mode { Full, NoTraverse };
+BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherNaive)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherSmart)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherNaive, OnlyInit)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherSmart, OnlyInit)->Apply(setupBenchmark)->Arg(2);
 
 template<class T, Mode mode = Full, Distribution dist = BothEnds>
 void run(benchmark::State& state)
