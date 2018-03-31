@@ -18,7 +18,7 @@ namespace std
 class ExtractCopy
 {
 public:
-  std::vector<Point> operator()(const std::vector<Point>& points) const
+  std::vector<Point> extract(const std::vector<Point>& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -40,7 +40,7 @@ public:
 class ExtractView
 {
 public:
-  auto operator()(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -59,7 +59,7 @@ class ExtractViewGeneric
 {
 public:
   template<class It, class Predicate>
-  auto operator()(It first, It last, Predicate p) const
+  auto extract(It first, It last, Predicate p) const
   {
     It begin1 = std::find_if    (first,  last, p);
     It end1   = std::find_if_not(begin1, last, p);
@@ -73,9 +73,9 @@ public:
                        boost::make_iterator_range(begin1, end1));
   }
 
-  auto operator()(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points) const
   {
-    return operator()(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isRight);
   }
 };
 
@@ -83,7 +83,7 @@ class ExtractViewGenericRanges
 {
 public:
   template<class It, class Predicate>
-  auto operator()(It first, It last, Predicate p) const
+  auto extract(It first, It last, Predicate p) const
   {
     It begin1 = std::find_if    (first,  last, p);
     It end1   = std::find_if_not(begin1, last, p);
@@ -97,9 +97,9 @@ public:
                                 ranges::range<It>(begin1, end1));
   }
 
-  auto operator()(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points) const
   {
-    return operator()(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isRight);
   }
 };
 
@@ -176,7 +176,7 @@ auto makeWrappingIterator(It it, It begin, It end)
 class ExtractViewWrappingIterator
 {
 public:
-  auto operator()(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -198,7 +198,7 @@ class GatherNaive
 {
 public:
   template<class It>
-  void operator()(It first, It last, It begin1, It end1, It begin2, It end2)
+  void gather(It first, It last, It begin1, It end1, It begin2, It end2)
   {
     auto middle = begin2 == end2 ? begin1 : begin2;
     std::rotate(first, middle, last);
@@ -209,7 +209,7 @@ class GatherSmart
 {
 public:
   template<class It>
-  void operator()(It first, It last, It begin1, It end1, It begin2, It end2)
+  void gather(It first, It last, It begin1, It end1, It begin2, It end2)
   {
     assert(begin2 == end2 || begin1 == first && end2 == last);
     if (begin2 == end2) {
@@ -233,7 +233,7 @@ template<class Gather>
 class ExtractMove
 {
 public:
-  std::vector<Point> operator()(std::vector<Point>&& points) const
+  std::vector<Point> extract(std::vector<Point>&& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -243,7 +243,7 @@ public:
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    Gather()(points.begin(), points.end(), begin1, end1, begin2, end2);
+    Gather().gather(points.begin(), points.end(), begin1, end1, begin2, end2);
 
     size_t count = (end1 - begin1) + (end2 - begin2);
     points.erase(points.begin() + count, points.end());
@@ -257,7 +257,7 @@ class ExtractViewCoroutine
 public:
   // Generic version is slow for some reason, due to templated predicate
 
-  std::generator<Point> operator()(const std::vector<Point>& points) const
+  std::generator<Point> extract(const std::vector<Point>& points) const
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
     auto end1   = std::find_if_not(begin1,         points.end(), isRight);
@@ -341,13 +341,13 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   const auto input = maskToVector(inputMask);
   const auto answer = maskToVector(answerMask);
 
-  EXPECT_EQ(answer, ExtractCopy()(input));
-  EXPECT_EQ(answer, ExtractViewWrappingIterator()(input));
-  EXPECT_EQ(answer, ExtractView()(input));
-  EXPECT_EQ(answer, ExtractViewGeneric()(input));
-  EXPECT_EQ(answer, ExtractViewGenericRanges()(input) | ranges::to_vector);
-  EXPECT_EQ(answer, ExtractNoCheck()(input));
-  EXPECT_EQ(answer, ExtractMove<GatherSmart>()(std::vector<Point>(input)));
+  EXPECT_EQ(answer, ExtractCopy().extract(input));
+  EXPECT_EQ(answer, ExtractViewWrappingIterator().extract(input));
+  EXPECT_EQ(answer, ExtractView().extract(input));
+  EXPECT_EQ(answer, ExtractViewGeneric().extract(input));
+  EXPECT_EQ(answer, ExtractViewGenericRanges().extract(input) | ranges::to_vector);
+  EXPECT_EQ(answer, ExtractNoCheck().extract(input));
+  EXPECT_EQ(answer, ExtractMove<GatherSmart>().extract(std::vector<Point>(input)));
 
   auto copy = input;
   auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
@@ -356,7 +356,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = ExtractViewGeneric()(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = ExtractViewGeneric().extract(inputList.begin(), inputList.end(), isRight);
   EXPECT_EQ(answer, outputRange);
 
   if (!outputRange.empty())
@@ -366,7 +366,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
     *outputRange.begin() = p;
   }
 
-  auto&& gen = ExtractViewCoroutine()(input);
+  auto&& gen = ExtractViewCoroutine().extract(input);
   auto yielded = std::vector<Point>(gen.begin(), gen.end());
   EXPECT_EQ(answer, yielded);
 }
@@ -375,12 +375,12 @@ void checkFailure(const std::string& inputMask)
 {
   const auto input = maskToVector(inputMask);
 
-  EXPECT_THROW(ExtractCopy()(input), std::runtime_error);
-  EXPECT_THROW(ExtractViewWrappingIterator()(input), std::runtime_error);
-  EXPECT_THROW(ExtractView()(input), std::runtime_error);
-  EXPECT_THROW(ExtractViewGeneric()(input), std::runtime_error);
-  EXPECT_THROW(ExtractViewGenericRanges()(input), std::runtime_error);
-  EXPECT_THROW(ExtractMove<GatherSmart>()(std::vector<Point>(input)), std::runtime_error);
+  EXPECT_THROW(ExtractCopy().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewWrappingIterator().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractView().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewGeneric().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewGenericRanges().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractMove<GatherSmart>().extract(std::vector<Point>(input)), std::runtime_error);
 }
 
 TEST(ExtractTest, RightLeft)
@@ -582,7 +582,7 @@ void runMove(benchmark::State& state)
     auto temp = points;
     if constexpr (mode == Full)
     {
-      auto answer = T<F>()(std::move(temp));
+      auto answer = T<F>().extract(std::move(temp));
       benchmark::DoNotOptimize(answer);
     }
     else
@@ -604,7 +604,7 @@ void run(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto range = T()(points);
+    auto range = T().extract(points);
 
     int sink;
     if constexpr (mode == Full)

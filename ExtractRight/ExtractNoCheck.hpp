@@ -76,7 +76,7 @@ class ExtractNoCheck
 {
 public:
   template<class It, class Predicate>
-  auto operator()(It first, It last, Predicate p) const
+  auto extract(It first, It last, Predicate p) const
   {
     auto bounds = findBounds(first, last, p);
 
@@ -84,8 +84,8 @@ public:
                        boost::make_iterator_range(bounds.begin1, bounds.end1));
   }
 
-  auto operator()(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points) const
   {
-    return operator()(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isRight);
   }
 };
