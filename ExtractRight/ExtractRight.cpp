@@ -583,7 +583,10 @@ void runMove(benchmark::State& state)
     if constexpr (mode == Full)
     {
       auto answer = T<F>().extract(std::move(temp));
-      benchmark::DoNotOptimize(answer);
+      int sink;
+      for (const auto& p : answer)
+        sink = p.x;
+      benchmark::DoNotOptimize(sink);
     }
     else
     {
@@ -600,7 +603,6 @@ template<class T, Mode mode = Full, Distribution dist = BothEnds>
 void run(benchmark::State& state)
 {
   const auto points = getBenchmarkArray(dist, state.range(0));
-  std::vector<Point> result(points.size());
 
   for (auto _ : state)
   {
