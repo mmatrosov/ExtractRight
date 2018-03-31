@@ -594,11 +594,13 @@ void run(benchmark::State& state)
   const auto points = getBenchmarkArray(Dist, state.range(0));
   std::vector<Point> result(points.size());
 
+  int sink;
   for (auto _ : state)
   {
     auto range = T()(points);
-    std::copy(range.begin(), range.end(), result.begin());
-    benchmark::DoNotOptimize(result);
+    for (const auto& p : range)
+      sink = p.x;
+    benchmark::DoNotOptimize(sink);
   }
 }
 BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(2);
