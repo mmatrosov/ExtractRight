@@ -572,32 +572,16 @@ void setupBenchmark(benchmark::internal::Benchmark* benchmark)
 
 enum Mode { Full, NoTraverse, OnlyInit };
 
-template<template<class> class T, class F, Mode mode = Full>
-void runMove(benchmark::State& state)
+template<class T>
+struct ImplTraits
 {
-  const auto points = getBenchmarkArray(BothEnds, state.range(0));
-
-  for (auto _ : state)
-  {
-    auto temp = points;
-    if constexpr (mode == Full)
-    {
-      auto answer = T<F>().extract(std::move(temp));
-      int sink;
-      for (const auto& p : answer)
-        sink = p.x;
-      benchmark::DoNotOptimize(sink);
-    }
-    else
-    {
-      benchmark::DoNotOptimize(temp);
-    }
-  }
-}
-BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherNaive)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherSmart)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherNaive, OnlyInit)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(runMove, ExtractMove, GatherSmart, OnlyInit)->Apply(setupBenchmark)->Arg(2);
+  using BufferT = const std::vector<Point>&;
+};
+template<class Gather>
+struct ImplTraits<ExtractMove<Gather>>
+{
+  using BufferT = std::vector<Point>;
+};
 
 template<class T, Mode mode = Full, Distribution dist = BothEnds>
 void run(benchmark::State& state)
@@ -606,13 +590,20 @@ void run(benchmark::State& state)
 
   for (auto _ : state)
   {
-    auto range = T().extract(points);
+    typename ImplTraits<T>::BufferT buffer = points;  // Copy for "ExtractMove" implementation, declare const& for other
+
+    if constexpr (mode == OnlyInit)
+    {
+      benchmark::DoNotOptimize(buffer);
+      continue;
+    }
+
+    auto range = T().extract(std::move(buffer));  // Only "ExtractMove" implementation will actually move from buffer
 
     int sink;
     if constexpr (mode == Full)
     {
-      for (const auto& p : range)
-        sink = p.x;
+      for (const auto& p : range) sink = p.x;
     }
     else
     {
@@ -621,6 +612,13 @@ void run(benchmark::State& state)
     benchmark::DoNotOptimize(sink);
   }
 }
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherNaive>)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherSmart>)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherNaive>, OnlyInit)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherSmart>, OnlyInit)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherNaive>, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractMove<GatherSmart>, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+
 BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(2);
