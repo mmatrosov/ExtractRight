@@ -79,7 +79,7 @@ public:
   }
 };
 
-class ExtractViewGenericRanges
+class ExtractViewRanges
 {
 public:
   template<class It, class Predicate>
@@ -366,7 +366,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   EXPECT_EQ(answer, ExtractViewWrappingIterator().extract(input));
   EXPECT_EQ(answer, ExtractView().extract(input));
   EXPECT_EQ(answer, ExtractViewGeneric().extract(input));
-  EXPECT_EQ(answer, ExtractViewGenericRanges().extract(input) | ranges::to_vector);
+  EXPECT_EQ(answer, ExtractViewRanges().extract(input) | ranges::to_vector);
   EXPECT_EQ(answer, ExtractNoCheck().extract(input));
   EXPECT_EQ(answer, ExtractMove<GatherSmart>().extract(std::vector<Point>(input)));
 
@@ -403,7 +403,7 @@ void checkFailure(const std::string& inputMask)
   EXPECT_THROW(ExtractViewWrappingIterator().extract(input), std::runtime_error);
   EXPECT_THROW(ExtractView().extract(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGeneric().extract(input), std::runtime_error);
-  EXPECT_THROW(ExtractViewGenericRanges().extract(input), std::runtime_error);
+  EXPECT_THROW(ExtractViewRanges().extract(input), std::runtime_error);
   EXPECT_THROW(ExtractMove<GatherSmart>().extract(std::vector<Point>(input)), std::runtime_error);
   EXPECT_THROW(ExtractList().extract(std::list<Point>(input.begin(), input.end())), std::runtime_error);
 }
@@ -660,7 +660,7 @@ BENCHMARK_TEMPLATE(run, ExtractList, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewRanges)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(2);
@@ -671,7 +671,7 @@ BENCHMARK_TEMPLATE(run, ExtractNoCheck, Full, Beginning)->Apply(setupBenchmark)-
 BENCHMARK_TEMPLATE(run, ExtractCopy, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractView, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse)->Apply(setupBenchmark)->Arg(2);
-BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewRanges, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse)->Apply(setupBenchmark)->Arg(2);
