@@ -588,18 +588,28 @@ void runInplace(benchmark::State& state)
 BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherNaive)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(runInplace, ExtractInplace, GatherSmart)->Apply(setupBenchmark)->Arg(2);
 
-template<class T, Distribution Dist = BothEnds>
+enum Mode { Full, NoTraverse };
+
+template<class T, Mode mode = Full, Distribution dist = BothEnds>
 void run(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray(Dist, state.range(0));
+  const auto points = getBenchmarkArray(dist, state.range(0));
   std::vector<Point> result(points.size());
 
-  int sink;
   for (auto _ : state)
   {
     auto range = T()(points);
-    for (const auto& p : range)
-      sink = p.x;
+
+    int sink;
+    if constexpr (mode == Full)
+    {
+      for (const auto& p : range)
+        sink = p.x;
+    }
+    else
+    {
+      sink = (*range.begin()).x;
+    }
     benchmark::DoNotOptimize(sink);
   }
 }
@@ -611,8 +621,19 @@ BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator)->Apply(setupBenchmark)->Arg
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(2);
 
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+
+BENCHMARK_TEMPLATE(run, ExtractCopy, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractView, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewGenericRanges, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractViewCoroutine, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
 
 int main(int argc, char* argv[])
 {
