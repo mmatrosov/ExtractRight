@@ -252,6 +252,27 @@ public:
   }
 };
 
+class ExtractList
+{
+public:
+  std::list<Point> extract(std::list<Point>&& points) const
+  {
+    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
+    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
+    auto begin2 = std::find_if    (end1,           points.end(), isRight);
+    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+
+    if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
+      throw std::runtime_error("Unexpected order");
+
+    points.erase(points.begin(), begin1);
+    points.splice(points.begin(), points, begin2, end2);
+    points.erase(end1, points.end());
+
+    return std::move(points);
+  }
+};
+
 class ExtractViewCoroutine
 {
 public:
@@ -366,6 +387,9 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
     *outputRange.begin() = p;
   }
 
+  auto outputList = ExtractList().extract(std::move(inputList));
+  EXPECT_EQ(answer, std::vector<Point>(outputList.begin(), outputList.end()));
+
   auto&& gen = ExtractViewCoroutine().extract(input);
   auto yielded = std::vector<Point>(gen.begin(), gen.end());
   EXPECT_EQ(answer, yielded);
@@ -381,6 +405,7 @@ void checkFailure(const std::string& inputMask)
   EXPECT_THROW(ExtractViewGeneric().extract(input), std::runtime_error);
   EXPECT_THROW(ExtractViewGenericRanges().extract(input), std::runtime_error);
   EXPECT_THROW(ExtractMove<GatherSmart>().extract(std::vector<Point>(input)), std::runtime_error);
+  EXPECT_THROW(ExtractList().extract(std::list<Point>(input.begin(), input.end())), std::runtime_error);
 }
 
 TEST(ExtractTest, RightLeft)
@@ -543,12 +568,13 @@ enum Distribution
   BothEnds, Beginning
 };
 
-std::vector<Point> getBenchmarkArray(Distribution dist, int fraction)
+template<class Container>
+Container getBenchmarkArray(Distribution dist, int fraction)
 {
   static const auto sample = Point{ 1, 1 };
   static const auto hole = Point{ -1, 1 };
 
-  std::vector<Point> points(BenchDataSize, hole);
+  Container points(BenchDataSize, hole);
 
   const int len = BenchDataSize / fraction;
 
@@ -575,22 +601,30 @@ enum Mode { Full, NoTraverse, OnlyInit };
 template<class T>
 struct ImplTraits
 {
-  using BufferT = const std::vector<Point>&;
+  using ContainerT = std::vector<Point>;
+  using BufferT = const ContainerT&;
 };
 template<class Gather>
 struct ImplTraits<ExtractMove<Gather>>
 {
-  using BufferT = std::vector<Point>;
+  using ContainerT = std::vector<Point>;
+  using BufferT = ContainerT;
+};
+template<>
+struct ImplTraits<ExtractList>
+{
+  using ContainerT = std::list<Point>;
+  using BufferT = ContainerT;
 };
 
 template<class T, Mode mode = Full, Distribution dist = BothEnds>
 void run(benchmark::State& state)
 {
-  const auto points = getBenchmarkArray(dist, state.range(0));
+  const auto points = getBenchmarkArray<typename ImplTraits<T>::ContainerT>(dist, state.range(0));
 
   for (auto _ : state)
   {
-    typename ImplTraits<T>::BufferT buffer = points;  // Copy for "ExtractMove" implementation, declare const& for other
+    typename ImplTraits<T>::BufferT buffer = points;
 
     if constexpr (mode == OnlyInit)
     {
@@ -598,7 +632,7 @@ void run(benchmark::State& state)
       continue;
     }
 
-    auto range = T().extract(std::move(buffer));  // Only "ExtractMove" implementation will actually move from buffer
+    auto range = T().extract(std::move(buffer));  // Most of implementations will not actually move from buffer
 
     int sink;
     if constexpr (mode == Full)
@@ -618,6 +652,10 @@ BENCHMARK_TEMPLATE(run, ExtractMove<GatherNaive>, OnlyInit)->Apply(setupBenchmar
 BENCHMARK_TEMPLATE(run, ExtractMove<GatherSmart>, OnlyInit)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractMove<GatherNaive>, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractMove<GatherSmart>, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+
+BENCHMARK_TEMPLATE(run, ExtractList)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractList, OnlyInit)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractList, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 
 BENCHMARK_TEMPLATE(run, ExtractCopy)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractView)->Apply(setupBenchmark)->Arg(2);
