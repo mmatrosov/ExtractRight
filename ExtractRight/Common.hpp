@@ -33,7 +33,7 @@ inline bool operator!=(const Point& a, const Point& b)
   return !(a == b);
 }
 
-inline bool isRight(const Point& pt)
+inline bool isPositive(const Point& pt)
 {
   return pt.x >= 0;
 };

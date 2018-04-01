@@ -86,7 +86,7 @@ public:
 
   auto extract(const std::vector<Point>& points) const
   {
-    return extract(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isPositive);
   }
 };
 
@@ -104,6 +104,6 @@ public:
 
   auto extract(const std::vector<Point>& points) const
   {
-    return extract(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isPositive);
   }
 };

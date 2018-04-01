@@ -20,10 +20,10 @@ class ExtractCopy
 public:
   std::vector<Point> extract(const std::vector<Point>& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -42,10 +42,10 @@ class ExtractView
 public:
   auto extract(const std::vector<Point>& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -75,7 +75,7 @@ public:
 
   auto extract(const std::vector<Point>& points) const
   {
-    return extract(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isPositive);
   }
 };
 
@@ -99,7 +99,7 @@ public:
 
   auto extract(const std::vector<Point>& points) const
   {
-    return extract(points.begin(), points.end(), isRight);
+    return extract(points.begin(), points.end(), isPositive);
   }
 };
 
@@ -178,10 +178,10 @@ class ExtractViewWrappingIterator
 public:
   auto extract(const std::vector<Point>& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -236,10 +236,10 @@ class ExtractMove
 public:
   std::vector<Point> extract(std::vector<Point>&& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -257,10 +257,10 @@ class ExtractList
 public:
   std::list<Point> extract(std::list<Point>&& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -280,10 +280,10 @@ public:
 
   std::generator<Point> extract(const std::vector<Point>& points) const
   {
-    auto begin1 = std::find_if    (points.begin(), points.end(), isRight);
-    auto end1   = std::find_if_not(begin1,         points.end(), isRight);
-    auto begin2 = std::find_if    (end1,           points.end(), isRight);
-    auto end2   = std::find_if_not(begin2,         points.end(), isRight);
+    auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
+    auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
+    auto begin2 = std::find_if    (end1,           points.end(), isPositive);
+    auto end2   = std::find_if_not(begin2,         points.end(), isPositive);
 
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
@@ -377,7 +377,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   auto i2(it);
 
   auto inputList = std::list<Point>(input.begin(), input.end());
-  auto outputRange = ExtractViewGeneric().extract(inputList.begin(), inputList.end(), isRight);
+  auto outputRange = ExtractViewGeneric().extract(inputList.begin(), inputList.end(), isPositive);
   EXPECT_EQ(answer, outputRange);
 
   if (!outputRange.empty())
@@ -408,32 +408,32 @@ void checkFailure(const std::string& inputMask)
   EXPECT_THROW(ExtractList().extract(std::list<Point>(input.begin(), input.end())), std::runtime_error);
 }
 
-TEST(ExtractTest, RightLeft)
+TEST(ExtractTest, PosNeg)
 {
   checkAnswer("*X.", "*X");
 }
 
-TEST(ExtractTest, LeftRight)
+TEST(ExtractTest, NegPos)
 {
   checkAnswer(".*X", "*X");
 }
 
-TEST(ExtractTest, LeftRightLeft)
+TEST(ExtractTest, NegPosNeg)
 {
   checkAnswer(".*X.", "*X");
 }
 
-TEST(ExtractTest, RightLeftRight)
+TEST(ExtractTest, PosNegPos)
 {
   checkAnswer("X.*", "*X");
 }
 
-TEST(ExtractTest, OnlyLeft)
+TEST(ExtractTest, OnlyNeg)
 {
   checkAnswer("...", "");
 }
 
-TEST(ExtractTest, OnlyRight)
+TEST(ExtractTest, OnlyPos)
 {
   checkAnswer("*XX", "*XX");
 }
