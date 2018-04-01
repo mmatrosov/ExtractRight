@@ -246,8 +246,7 @@ public:
 
     Gather().gather(points.begin(), points.end(), begin1, end1, begin2, end2);
 
-    size_t count = (end1 - begin1) + (end2 - begin2);
-    points.erase(points.begin() + count, points.end());
+    points.resize((end1 - begin1) + (end2 - begin2));
 
     return std::move(points);  // Note move! https://stackoverflow.com/a/29128776/261217
   }
