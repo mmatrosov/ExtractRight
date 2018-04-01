@@ -18,7 +18,7 @@ namespace std
 class ExtractCopy
 {
 public:
-  std::vector<Point> extract(const std::vector<Point>& points) const
+  std::vector<Point> extract(const std::vector<Point>& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
@@ -40,7 +40,7 @@ public:
 class ExtractView
 {
 public:
-  auto extract(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
@@ -59,7 +59,7 @@ class ExtractViewGeneric
 {
 public:
   template<class It, class Predicate>
-  auto extract(It first, It last, Predicate p) const
+  auto extract(It first, It last, Predicate p)
   {
     It begin1 = std::find_if    (first,  last, p);
     It end1   = std::find_if_not(begin1, last, p);
@@ -73,7 +73,7 @@ public:
                        boost::make_iterator_range(begin1, end1));
   }
 
-  auto extract(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points)
   {
     return extract(points.begin(), points.end(), isPositive);
   }
@@ -83,7 +83,7 @@ class ExtractViewRanges
 {
 public:
   template<class It, class Predicate>
-  auto extract(It first, It last, Predicate p) const
+  auto extract(It first, It last, Predicate p)
   {
     It begin1 = std::find_if    (first,  last, p);
     It end1   = std::find_if_not(begin1, last, p);
@@ -97,7 +97,7 @@ public:
                                 ranges::range<It>(begin1, end1));
   }
 
-  auto extract(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points)
   {
     return extract(points.begin(), points.end(), isPositive);
   }
@@ -176,7 +176,7 @@ auto makeWrappingIterator(It it, It begin, It end)
 class ExtractViewWrappingIterator
 {
 public:
-  auto extract(const std::vector<Point>& points) const
+  auto extract(const std::vector<Point>& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
@@ -234,7 +234,7 @@ template<class Gather>
 class ExtractMove
 {
 public:
-  std::vector<Point> extract(std::vector<Point>&& points) const
+  std::vector<Point> extract(std::vector<Point>&& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
@@ -255,7 +255,7 @@ public:
 class ExtractList
 {
 public:
-  std::list<Point> extract(std::list<Point>&& points) const
+  std::list<Point> extract(std::list<Point>&& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
@@ -278,7 +278,7 @@ class ExtractViewCoroutine
 public:
   // Generic version is slow for some reason, due to templated predicate
 
-  std::generator<Point> extract(const std::vector<Point>& points) const
+  std::generator<Point> extract(const std::vector<Point>& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
