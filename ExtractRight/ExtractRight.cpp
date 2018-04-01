@@ -634,15 +634,15 @@ void run(benchmark::State& state)
 
     auto range = T().extract(std::move(buffer));  // Most of implementations will not actually move from buffer
 
+    if constexpr (mode == NoTraverse)
+    {
+      benchmark::DoNotOptimize(range.begin());
+      continue;
+    }
+
     int sink;
-    if constexpr (mode == Full)
-    {
-      for (const auto& p : range) sink = p.x;
-    }
-    else
-    {
-      sink = (*range.begin()).x;
-    }
+    for (const auto& p : range) 
+      sink = p.x;
     benchmark::DoNotOptimize(sink);
   }
 }
@@ -671,10 +671,10 @@ BENCHMARK_TEMPLATE(run, ExtractViewRanges, NoTraverse)->Apply(setupBenchmark)->A
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
-BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
-BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
+BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
 
 int main(int argc, char* argv[])
 {
