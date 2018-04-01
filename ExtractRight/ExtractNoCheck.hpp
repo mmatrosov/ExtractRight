@@ -89,3 +89,21 @@ public:
     return extract(points.begin(), points.end(), isRight);
   }
 };
+
+class ExtractNoCheckSimple
+{
+public:
+  template<class It, class Predicate>
+  auto extract(It first, It last, Predicate p) const
+  {
+    auto bounds = findBounds(first, last, p, std::forward_iterator_tag{});
+
+    return boost::join(boost::make_iterator_range(bounds.begin2, bounds.end2),
+                       boost::make_iterator_range(bounds.begin1, bounds.end1));
+  }
+
+  auto extract(const std::vector<Point>& points) const
+  {
+    return extract(points.begin(), points.end(), isRight);
+  }
+};

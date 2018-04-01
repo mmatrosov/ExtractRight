@@ -663,6 +663,7 @@ BENCHMARK_TEMPLATE(run, ExtractViewGeneric)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewRanges)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheckSimple)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractCopy, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractView, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewWrappingIterator, NoTraverse)->Apply(setupBenchmark)->Arg(2);
@@ -670,6 +671,7 @@ BENCHMARK_TEMPLATE(run, ExtractViewGeneric, NoTraverse)->Apply(setupBenchmark)->
 BENCHMARK_TEMPLATE(run, ExtractViewRanges, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractViewCoroutine, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck, NoTraverse)->Apply(setupBenchmark)->Arg(2);
+BENCHMARK_TEMPLATE(run, ExtractNoCheckSimple, NoTraverse)->Apply(setupBenchmark)->Arg(2);
 
 BENCHMARK_TEMPLATE(run, ExtractViewGeneric, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
 BENCHMARK_TEMPLATE(run, ExtractNoCheck, Full, Beginning)->Apply(setupBenchmark)->RangeMultiplier(2)->Range(1, BenchDataSize * 2);
