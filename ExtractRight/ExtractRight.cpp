@@ -368,6 +368,7 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   EXPECT_EQ(answer, ExtractViewGeneric().extract(input));
   EXPECT_EQ(answer, ExtractViewRanges().extract(input) | ranges::to_vector);
   EXPECT_EQ(answer, ExtractNoCheck().extract(input));
+  EXPECT_EQ(answer, ExtractNoCheckSimple().extract(input));
   EXPECT_EQ(answer, ExtractMove<GatherSmart>().extract(std::vector<Point>(input)));
 
   auto copy = input;

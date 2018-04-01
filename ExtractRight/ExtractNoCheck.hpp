@@ -96,10 +96,16 @@ public:
   template<class It, class Predicate>
   auto extract(It first, It last, Predicate p)
   {
-    auto bounds = findBounds(first, last, p, std::forward_iterator_tag{});
+    It begin1 = std::find_if    (first,  last, p);
+    It end1   = std::find_if_not(begin1, last, p);
+    It begin2 = std::find_if    (end1,   last, p);
+    It end2   = last;
 
-    return boost::join(boost::make_iterator_range(bounds.begin2, bounds.end2),
-                       boost::make_iterator_range(bounds.begin1, bounds.end1));
+    assert(end2 == std::find_if_not(begin2, last, p) &&
+      (begin2 == end2 || begin1 == first && end2 == last));
+
+    return boost::join(boost::make_iterator_range(begin2, end2),
+                       boost::make_iterator_range(begin1, end1));
   }
 
   auto extract(const std::vector<Point>& points)
