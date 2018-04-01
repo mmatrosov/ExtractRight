@@ -200,6 +200,7 @@ public:
   template<class It>
   void gather(It first, It last, It begin1, It end1, It begin2, It end2)
   {
+    assert(begin2 == end2 || begin1 == first && end2 == last);
     auto middle = begin2 == end2 ? begin1 : begin2;
     std::rotate(first, middle, last);
   }
