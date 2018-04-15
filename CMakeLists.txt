@@ -6,12 +6,13 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(Range-V3-VS2015/include)
 
-set(gtest_force_shared_crt true)
+set(gtest_force_shared_crt ON CACHE BOOL "")
 add_subdirectory(googletest)
 
-set(BENCHMARK_ENABLE_GTEST_TESTS false)
-set(BENCHMARK_ENABLE_TESTING false)
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "")
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
 add_subdirectory(benchmark)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_SUPPRESS_REGENERATION true)
