@@ -11,9 +11,9 @@ struct Bounds
 template<class It, class Predicate>
 Bounds<It> findBounds(It first, It last, Predicate p, std::forward_iterator_tag)
 {
-  auto begin1 = std::find_if    (first,  last, p);
-  auto end1   = std::find_if_not(begin1, last, p);
-  auto begin2 = std::find_if    (end1,   last, p);
+  It begin1 = std::find_if    (first,  last, p);
+  It end1   = std::find_if_not(begin1, last, p);
+  It begin2 = std::find_if    (end1,   last, p);
   return { begin1, end1, begin2, last };
 }
 
@@ -31,10 +31,8 @@ It findAny(It first, It last, Predicate p)
   while (step > 1)
   {
     for (diff_t i = step / 2 - 1; i < n; i += step)
-    {
       if (p(first[i]))
         return first + i;
-    }
     step /= 2;
   }
 
