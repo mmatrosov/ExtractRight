@@ -4,7 +4,11 @@ project(ExtractRight)
 find_package(Boost 1.65 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-include_directories(Range-V3-VS2015/include)
+if(MSVC)
+  include_directories(Range-V3-VS2015/include)
+else()
+  include_directories(range-v3/include)
+endif()
 
 set(gtest_force_shared_crt ON CACHE BOOL "")
 add_subdirectory(googletest)

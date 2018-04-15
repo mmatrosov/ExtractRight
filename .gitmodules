@@ -7,3 +7,6 @@
 [submodule "googletest"]
 	path = googletest
 	url = https://github.com/google/googletest.git
+[submodule "range-v3"]
+	path = range-v3
+	url = https://github.com/ericniebler/range-v3.git
