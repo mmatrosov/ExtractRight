@@ -16,7 +16,9 @@ add_subdirectory(benchmark)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_SUPPRESS_REGENERATION true)
-add_compile_options(/EHsc /await)
+if(MSVC)
+  add_compile_options(/EHsc /await)
+endif()
 add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE -D_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING)
 
 add_executable(ExtractRight 
