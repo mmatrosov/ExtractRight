@@ -13,11 +13,6 @@
 #include <iostream>
 #include <list>
 
-namespace std
-{
-  using std::experimental::generator;
-}
-
 class ExtractCopy
 {
 public:
@@ -276,6 +271,14 @@ public:
   }
 };
 
+#ifdef _MSC_VER
+#include <experimental/generator>
+
+namespace std
+{
+  using std::experimental::generator;
+}
+
 class ExtractViewCoroutine
 {
 public:
@@ -295,6 +298,9 @@ public:
     for (auto it = begin1; it != end1; ++it) co_yield *it;  
   }
 };
+#else
+#define ExtractViewCoroutine ExtractViewGeneric
+#endif
 
 void used()
 {
