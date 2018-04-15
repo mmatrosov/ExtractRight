@@ -10,7 +10,10 @@
 
 #include <gtest/gtest.h>
 
-#include <iostream>
+#include <range/v3/core.hpp>
+#include <range/v3/view/concat.hpp>
+
+#include <cctype>
 #include <list>
 
 class ExtractCopy
@@ -301,35 +304,6 @@ public:
 #else
 #define ExtractViewCoroutine ExtractViewGeneric
 #endif
-
-void used()
-{
-#if 0
-  using namespace boost::range;
-  using namespace boost::algorithm;
-
-  // lambda functions (including generic)
-  // ternary operator
-  // exceptions
-  // transient parameters
-  std::vector<int>::empty();
-  adjacent_find();
-  rotate();
-  is_partitioned();
-  partition_point();
-  std::next();
-
-  // custom make-function
-  // template parameters for iterators
-  // template parameters for predicates
-  // function return type deduction 
-  boost::range;
-  boost::algorithm;
-  boost::iterator_adaptor<int> a;
-  boost::make_iterator_range();
-  boost::join();
-#endif
-}
 
 std::vector<Point> maskToVector(const std::string& mask)
 {

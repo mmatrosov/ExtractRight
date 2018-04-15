@@ -2,6 +2,11 @@
 
 #include "Common.hpp"
 
+#include <boost/range/join.hpp>
+
+#include <vector>
+#include <algorithm>
+
 template<class It>
 struct Bounds
 {

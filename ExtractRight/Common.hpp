@@ -1,14 +1,6 @@
 #pragma once
 
-#include <boost/algorithm/cxx11/is_partitioned.hpp>
-#include <boost/algorithm/cxx11/partition_point.hpp>
-#include <boost/range/join.hpp>
-
-#include <range/v3/core.hpp>
-#include <range/v3/view/concat.hpp>
-
-#include <vector>
-#include <cctype>
+#include <iostream>
 
 struct Point
 {
