@@ -495,12 +495,13 @@ TEST(ExtractTest, Incorrect3)
 
 void checkFindAny(const std::string& str)
 {
-  auto it = findAny(str.begin(), str.end(), std::isalpha);
+  auto isalpha = [](unsigned char c) { return std::isalpha(c); };
+  auto it = findAny(str.begin(), str.end(), isalpha);
 
   if (it != str.end())
     ASSERT_TRUE(std::isalpha(*it));
   else
-    ASSERT_EQ(0, boost::range::count_if(str, std::isalpha));
+    ASSERT_EQ(0, boost::range::count_if(str, isalpha));
 }
 
 TEST(FindAnyTest, Empty)

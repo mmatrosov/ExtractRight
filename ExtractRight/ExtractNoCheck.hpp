@@ -67,7 +67,7 @@ Bounds<It> findBounds(It first, It last, Predicate p, std::random_access_iterato
 template<class It, class Predicate>
 Bounds<It> findBounds(It first, It last, Predicate p)
 {
-  return findBounds(first, last, p, std::iterator_traits<It>::iterator_category{});
+  return findBounds(first, last, p, typename std::iterator_traits<It>::iterator_category{});
 }
 
 class ExtractNoCheck
