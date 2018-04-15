@@ -5,6 +5,9 @@
 #include <benchmark/benchmark.h>
 #pragma warning (pop)
 
+#include <boost/range/algorithm/count.hpp>
+#include <boost/range/algorithm/count_if.hpp>
+
 #include <gtest/gtest.h>
 
 #include <iostream>
