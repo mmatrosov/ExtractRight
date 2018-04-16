@@ -625,7 +625,7 @@ void run(benchmark::State& state)
       continue;
     }
 
-    int sink;
+    volatile int sink;
     for (const auto& p : range) 
       sink = p.x;
     benchmark::DoNotOptimize(sink);
