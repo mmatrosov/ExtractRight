@@ -21,3 +21,9 @@ Build sources
     cd ExtractRight
     mkdir build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
+
+## Run
+
+To save benchmark results to a .csv file, run as follows:
+
+    ./ExtractRight --benchmark_out_format=csv --benchmark_out=benchmark.csv
