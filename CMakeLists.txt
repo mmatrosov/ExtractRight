@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(ExtractRight)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-logical-op-parentheses")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -fcoroutines-ts -Wno-logical-op-parentheses")
 endif()
 
 find_package(Boost 1.65 REQUIRED)
@@ -20,6 +20,8 @@ add_subdirectory(googletest)
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "")
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
 add_subdirectory(benchmark)
+
+include_directories(cppcoro/include)
 
 
 set(CMAKE_CXX_STANDARD 17)

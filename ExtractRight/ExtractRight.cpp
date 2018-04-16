@@ -274,20 +274,29 @@ public:
   }
 };
 
+#ifdef __clang__
+#include <cppcoro/generator.hpp>
+namespace std
+{
+  using cppcoro::generator;
+}
+#endif
+
 #ifdef _MSC_VER
 #include <experimental/generator>
-
 namespace std
 {
   using std::experimental::generator;
 }
+#endif
 
+#if defined(__clang__) || defined(_MSC_VER)
 class ExtractViewCoroutine
 {
 public:
   // Generic version is slow for some reason, due to templated predicate
 
-  std::generator<Point> extract(const std::vector<Point>& points)
+  std::generator<const Point> extract(const std::vector<Point>& points)
   {
     auto begin1 = std::find_if    (points.begin(), points.end(), isPositive);
     auto end1   = std::find_if_not(begin1,         points.end(), isPositive);
