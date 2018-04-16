@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(ExtractRight)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
 find_package(Boost 1.65 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
