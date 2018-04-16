@@ -10,7 +10,16 @@
 
 #include <gtest/gtest.h>
 
+#ifdef _MSC_VER
+#include <range/v3/core.hpp>
+namespace ranges
+{
+  template<class T>
+  using iterator_range = range<T>;
+}
+#else
 #include <range/v3/iterator_range.hpp>
+#endif
 #include <range/v3/view/concat.hpp>
 
 #include <cctype>
