@@ -4,8 +4,9 @@
 
 #include <boost/range/join.hpp>
 
-#include <vector>
 #include <algorithm>
+#include <functional>
+#include <vector>
 
 template<class It>
 struct Bounds
