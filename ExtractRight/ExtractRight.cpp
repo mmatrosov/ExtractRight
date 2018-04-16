@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-#include <range/v3/core.hpp>
+#include <range/v3/iterator_range.hpp>
 #include <range/v3/view/concat.hpp>
 
 #include <cctype>
@@ -94,8 +94,8 @@ public:
     if (!(begin2 == end2 || begin1 == first && end2 == last))
       throw std::runtime_error("Unexpected order");
 
-    return ranges::view::concat(ranges::range<It>(begin2, end2),
-                                ranges::range<It>(begin1, end1));
+    return ranges::view::concat(ranges::iterator_range<It>(begin2, end2),
+                                ranges::iterator_range<It>(begin1, end1));
   }
 
   auto extract(const std::vector<Point>& points)
