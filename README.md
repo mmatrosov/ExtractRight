@@ -63,11 +63,18 @@ Build sources with clang and libc++:
 
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-6.0 .. && make
 
-Build sources with g++ and libstdc++:
+Build sources with gcc and libstdc++:
 
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 .. && make
+
+Build sources with MSVC:
+
+    cmake -G "Visual Studio 15 2017 Win64" ..
+    "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+    msbuild /p:Configuration=Release ExtractRight.sln
+    cd Release
     
-Check that flags are ok:
+Check that flags are ok (when generating makefiles):
 
     mikhail@stronghold:~/dev/ExtractRight/build$ cat CMakeFiles/ExtractRight.dir/flags.make 
     # CMAKE generated file: DO NOT EDIT!
