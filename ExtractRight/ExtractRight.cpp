@@ -196,11 +196,11 @@ public:
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    auto middle = begin2 == end2 ? begin1 : begin2;
-    auto beginRes = makeWrappingIterator(middle, points.begin(), points.end());
+    auto begin = makeWrappingIterator(begin2 == end2 ? begin1 : begin2,
+                                      points.begin(), points.end());
 
     size_t count = (end1 - begin1) + (end2 - begin2);
-    return boost::make_iterator_range(beginRes, beginRes + count);
+    return boost::make_iterator_range(begin, begin + count);
   }
 };
 
