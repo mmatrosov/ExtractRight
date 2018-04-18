@@ -1,14 +1,1 @@
-*.sdf
-*.opensdf
-*.db
-*.opendb
-*.suo
-*.user
-/.vs/
-/_ReSharper.Caches/
-x64/
-/conanbuildinfo.props
-/conanbuildinfo.txt
-/conaninfo.txt
 /build/
-/.idea/
