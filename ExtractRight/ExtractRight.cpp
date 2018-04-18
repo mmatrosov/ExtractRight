@@ -12,11 +12,7 @@
 
 #ifdef _MSC_VER
 #include <range/v3/core.hpp>
-namespace ranges
-{
-  template<class T>
-  using iterator_range = range<T>;
-}
+#define iterator_range range<It>
 #else
 #include <range/v3/iterator_range.hpp>
 #endif
@@ -103,8 +99,8 @@ public:
     if (!(begin2 == end2 || begin1 == first && end2 == last))
       throw std::runtime_error("Unexpected order");
 
-    return ranges::view::concat(ranges::iterator_range<It>(begin2, end2),
-                                ranges::iterator_range<It>(begin1, end1));
+    return ranges::view::concat(ranges::iterator_range(begin2, end2),
+                                ranges::iterator_range(begin1, end1));
   }
 
   auto extract(const std::vector<Point>& points)
@@ -177,11 +173,14 @@ private:
   size_t m_offset;
 };
 
+#ifdef _MSC_VER
 template<class It>
 auto makeWrappingIterator(It it, It begin, It end)
 {
   return WrappingIterator<It>(it, begin, end);
 }
+#define WrappingIterator makeWrappingIterator
+#endif
 
 class ExtractViewWrappingIterator
 {
@@ -196,8 +195,8 @@ public:
     if (!(begin2 == end2 || begin1 == points.begin() && end2 == points.end()))
       throw std::runtime_error("Unexpected order");
 
-    auto begin = makeWrappingIterator(begin2 == end2 ? begin1 : begin2,
-                                      points.begin(), points.end());
+    auto begin = WrappingIterator(begin2 == end2 ? begin1 : begin2,
+                                  points.begin(), points.end());
 
     size_t count = (end1 - begin1) + (end2 - begin2);
     return boost::make_iterator_range(begin, begin + count);
@@ -373,8 +372,8 @@ void checkAnswer(const std::string& inputMask, const std::string& answerMask)
   EXPECT_EQ(answer, ExtractMove<GatherSmart>().extract(std::vector<Point>(input)));
 
   auto copy = input;
-  auto cit = makeWrappingIterator(input.begin(), input.begin(), input.end());
-  auto it = makeWrappingIterator(copy.begin(), copy.begin(), copy.end());
+  auto cit = WrappingIterator(input.begin(), input.begin(), input.end());
+  auto it = WrappingIterator(copy.begin(), copy.begin(), copy.end());
   cit = it;
   auto i2(it);
 
