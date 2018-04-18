@@ -1,9 +1,6 @@
 #include "ExtractNoCheck.hpp"
 
-#pragma warning (push)
-#pragma warning (disable : 4141)
 #include <benchmark/benchmark.h>
-#pragma warning (pop)
 
 #include <boost/range/algorithm/count.hpp>
 #include <boost/range/algorithm/count_if.hpp>
