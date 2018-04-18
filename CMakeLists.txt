@@ -32,7 +32,7 @@ endif()
 add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE -D_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING)
 
 add_executable(ExtractRight 
-  ExtractRight/ExtractRight.cpp 
-  ExtractRight/ExtractNoCheck.hpp
-  ExtractRight/Common.hpp)
+  src/main.cpp 
+  src/ExtractNoCheck.hpp
+  src/Common.hpp)
 target_link_libraries(ExtractRight gtest benchmark)
