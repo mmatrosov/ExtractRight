@@ -76,6 +76,16 @@ Bounds<It> findBounds(It first, It last, Predicate p)
   return findBounds(first, last, p, typename std::iterator_traits<It>::iterator_category{});
 }
 
+template<class It, class Predicate>
+Bounds<It> findBoundsForSlides(It first, It last, Predicate p)
+{
+  if constexpr (std::is_same_v<typename std::iterator_traits<It>::iterator_category, 
+                               std::random_access_iterator_tag>)
+    return findBoundsRandomAccess(first, last, p);
+  else
+    return findBoundsDefault(first, last, p);
+}
+
 class ExtractNoCheck
 {
 public:
