@@ -4,7 +4,7 @@ Source code used for [Versatile C++ applied](http://cppconf.ru/talks/mikhail-mat
 
 Why "ExtractRight"? Well, it started [some time ago](https://corehard.by/2017/02/20/day-to-day-c-algorithms-and-iterators/)...
 
-# Steps to get benchmarks
+# Run on Ubuntu
 
 Install Ubuntu 18.04 LTS (Bionic Beaver) Beta 2.
 
@@ -19,7 +19,27 @@ Install boost:
 
     sudo apt install libboost-dev
 
-Check installed versions:
+Get sources:
+
+    git clone --recurse-submodules https://github.com/mmatrosov/ExtractRight.git
+    cd ExtractRight
+    mkdir build && cd build
+    
+Build sources with clang and libc++:
+
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-6.0 .. && make
+
+Build sources with gcc and libstdc++:
+
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 .. && make
+
+Run benchmarks:
+
+    ./ExtractRight --benchmark_out_format=csv --benchmark_out=benchmark.csv
+
+### Check environment
+
+Installed packages:
 
     mikhail@stronghold:~/dev/ExtractRight/build$ apt list --installed clang*
     Listing... Done
@@ -53,28 +73,7 @@ Check installed versions:
     libboost-thread1.65.1/bionic,now 1.65.1+dfsg-0ubuntu5 amd64 [installed]
     libboost1.65-dev/bionic,now 1.65.1+dfsg-0ubuntu5 amd64 [installed,automatic]
 
-Get sources:
-
-    git clone --recurse-submodules https://github.com/mmatrosov/ExtractRight.git
-    cd ExtractRight
-    mkdir build && cd build
-    
-Build sources with clang and libc++:
-
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++-6.0 .. && make
-
-Build sources with gcc and libstdc++:
-
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-8 .. && make
-
-Build sources with MSVC:
-
-    cmake -G "Visual Studio 15 2017 Win64" ..
-    "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
-    msbuild /p:Configuration=Release ExtractRight.sln
-    cd Release
-    
-Check that flags are ok (when generating makefiles):
+Compiler flags:
 
     mikhail@stronghold:~/dev/ExtractRight/build$ cat CMakeFiles/ExtractRight.dir/flags.make 
     # CMAKE generated file: DO NOT EDIT!
@@ -87,6 +86,26 @@ Check that flags are ok (when generating makefiles):
     
     CXX_INCLUDES = -I/home/mikhail/dev/ExtractRight/range-v3/include -isystem /home/mikhail/dev/ExtractRight/googletest/googletest/include -I/home/mikhail/dev/ExtractRight/benchmark/src/../include 
     
+# Run on Windows
+
+Install Microsoft Visual Studio 2017.
+
+Get sources:
+
+    git clone --recurse-submodules https://github.com/mmatrosov/ExtractRight.git
+    cd ExtractRight
+    mkdir build && cd build
+    
+Build sources with MSVC:
+
+    cmake -G "Visual Studio 15 2017 Win64" ..
+    "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+    msbuild /p:Configuration=Release ExtractRight.sln
+    
 Run benchmarks:
 
-    ./ExtractRight --benchmark_out_format=csv --benchmark_out=benchmark.csv
+    Release\ExtractRight --benchmark_out_format=csv --benchmark_out=benchmark.csv
+
+# Compare results
+
+Open `benchmark.csv` in Excel (some manual editing might be needed). Paste data to a corresponding sheet of `presentation/Benchmarks.xlsx` table. All charts will be updated automatically.
